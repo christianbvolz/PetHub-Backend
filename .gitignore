@@ -1,0 +1,28 @@
+# --- SEGURANÇA (CRÍTICO) ---
+# Ignora o arquivo que contém a senha do TiDB
+.env
+
+# --- ARQUIVOS DE BUILD DO .NET ---
+# Não queremos subir o executável gerado, apenas o código fonte
+[Bb]in/
+[Oo]bj/
+
+# --- CONFIGURAÇÕES DE USUÁRIO/IDE ---
+# Configurações locais do VS Code (opcional, mas recomendado ignorar)
+.vscode/
+# Cache do Visual Studio (se abrir no Windows depois)
+.vs/
+*.user
+
+# --- ARQUIVOS DE SISTEMA ---
+.DS_Store
+Thumbs.db
+
+# --- LOGS E TESTES ---
+*.log
+TestResults/
+
+# --- APPSETTINGS ---
+# O appsettings.json e Development.json geralmente SOBEM para o git.
+# Mas se você criar um arquivo específico para sua máquina local, ignore ele:
+appsettings.Local.json
