@@ -203,47 +203,58 @@ namespace pethub.Migrations
 
                     b.Property<string>("City")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
 
                     b.Property<string>("Neighborhood")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Number")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("ProfilePictureUrl")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<string>("State")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2)
+                        .HasColumnType("varchar(2)");
 
                     b.Property<string>("Street")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("StreetNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
 
                     b.Property<string>("ZipCode")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(8)
+                        .HasColumnType("varchar(8)");
 
                     b.HasKey("Id");
 

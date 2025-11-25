@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace pethub.DTOs;
+namespace pethub.DTOs.User;
 
 public class CreateUserDto
 {
