@@ -1,31 +1,77 @@
 using Microsoft.EntityFrameworkCore;
 using pethub.Data;
+using pethub.Hubs;
+using pethub.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Tenta ler a variável de ambiente (Para Docker / Render)
-var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+// ==================================================================
+// 1. CONFIGURATION LOADING (Environment Variables vs Local)
+// ==================================================================
 
-// Se não achou (está rodando local sem docker), pega do appsettings.json
+// Database Connection String
+// Tries to get from Docker/Render env var first, then falls back to local JSON
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 if (string.IsNullOrEmpty(connectionString))
 {
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
-// Injeta o DbContext usando o driver do MySQL (Pomelo)
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+// Frontend URL for CORS (Comma or Semicolon separated)
+// Example: "http://localhost:3000;https://pethub.vercel.app"
+var frontendUrl =
+    Environment.GetEnvironmentVariable("FRONTEND_URL")
+    ?? "http://localhost:3000;http://localhost:5173";
 
-// Adiciona os Controllers
+// JWT Secret (For future Authentication)
+var jwtSecret =
+    Environment.GetEnvironmentVariable("JWT_SECRET")
+    ?? builder.Configuration["JwtSettings:Secret"]
+    ?? "pethub_secret_key_default_local_dev_12345";
+
+// ==================================================================
+// 2. SERVICE REGISTRATION (Dependency Injection)
+// ==================================================================
+
+// Database Context (MySQL / TiDB)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+);
+
+// SignalR (Real-time Chat)
+builder.Services.AddSignalR();
+
+// HTTP Client for External APIs (ViaCEP)
+builder.Services.AddHttpClient<CepService>();
+
+// CORS: Allow Frontend to access Backend
+var allowedOrigins = frontendUrl.Split([';', ','], StringSplitOptions.RemoveEmptyEntries);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials(); // Required for SignalR
+        }
+    );
+});
+
+// API Controllers
 builder.Services.AddControllers();
 
-// Configura o Swagger
+// Swagger Documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ==================================================================
+// 3. MIDDLEWARE PIPELINE
+// ==================================================================
+
 var app = builder.Build();
 
-// Configura o pipeline de requisições HTTP
+// Enable Swagger in Development mode
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -34,8 +80,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Apply CORS Policy (Must be before Authorization)
+app.UseCors("AllowFrontend");
+
 app.UseAuthorization();
 
-app.MapControllers(); // Mapeia seus endpoints
+// Map API Endpoints
+app.MapControllers();
 
+// Map SignalR Hubs
+app.MapHub<ChatHub>("/chatHub");
+
+// Start Application
 app.Run();
