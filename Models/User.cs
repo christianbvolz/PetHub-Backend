@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace pethub.Models;
@@ -6,39 +7,49 @@ public class User
 {
     public int Id { get; set; }
 
+    [Required]
+    [MaxLength(30)]
     public string Name { get; set; } = string.Empty;
 
+    [Required]
+    [MaxLength(100)]
     public string Email { get; set; } = string.Empty;
 
+    [Required]
+    [MaxLength(255)]
     public string PasswordHash { get; set; } = string.Empty;
 
-    // User Profile Picture (Single photo per user)
+    [MaxLength(200)]
     public string ProfilePictureUrl { get; set; } = string.Empty;
 
-    // Contact Information
+    [Required]
+    [MaxLength(20)]
     public string PhoneNumber { get; set; } = string.Empty;
 
-    // --- FULL ADDRESS DETAILS ---
-
-    // Zip Code (CEP) - 8 digits
+    [Required]
+    [MaxLength(8)]
     public string ZipCode { get; set; } = string.Empty;
 
-    // State (UF) - e.g., SP, RJ, RS
+    [Required]
+    [MaxLength(2)]
     public string State { get; set; } = string.Empty;
 
-    // City
+    [Required]
+    [MaxLength(50)]
     public string City { get; set; } = string.Empty;
 
-    // Neighborhood (Bairro)
+    [Required]
+    [MaxLength(50)]
     public string Neighborhood { get; set; } = string.Empty;
 
-    // Street Name (Logradouro)
+    [Required]
+    [MaxLength(100)]
     public string Street { get; set; } = string.Empty;
 
-    // House Number (User must provide this manually)
-    public string Number { get; set; } = string.Empty;
+    [Required]
+    [MaxLength(10)]
+    public string StreetNumber { get; set; } = string.Empty;
 
-    // Navigation Property: One user can register multiple pets
     [JsonIgnore]
-    public List<Pet> Pets { get; set; } = new();
+    public List<Pet> Pets { get; set; } = [];
 }

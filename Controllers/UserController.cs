@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using pethub.Data;
 using pethub.DTOs;
 using pethub.Models;
+using pethub.Utils;
 
 namespace pethub.Controllers;
 
@@ -19,37 +20,37 @@ public class UsersController(AppDbContext context) : ControllerBase
     }
 
     // POST: api/users
-    // Creates a new user.
-    // Note: Address information (City, State, etc.) must be provided by the frontend.
+    // Creates a new user with secure password hashing
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(CreateUserDto dto)
     {
-        // 1. Basic Validation: Check if email is already in use
+        // 1. Validation (Business Logic must still be handled explicitly)
+        // We check if the email exists because this is a "logical" error, not a "system" error.
         if (await context.Users.AnyAsync(u => u.Email == dto.Email))
         {
             return BadRequest("Email already registered.");
         }
+
+        // 2. Mapping: Convert DTO to User Entity
         var user = new User
         {
             Name = dto.Name,
             Email = dto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            PasswordHash = PasswordHelper.HashPassword(dto.Password),
             PhoneNumber = dto.PhoneNumber,
             ZipCode = dto.ZipCode,
             State = dto.State,
             City = dto.City,
             Neighborhood = dto.Neighborhood,
             Street = dto.Street,
-            Number = dto.Number,
+            StreetNumber = dto.StreetNumber,
+            ProfilePictureUrl = "",
         };
 
-        // 2. Save to Database
-        // We assume the frontend sends the complete address based on the ZipCode
         context.Users.Add(user);
 
         await context.SaveChangesAsync();
 
-        // Returns 201 Created with the location of the new resource
         return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
     }
 }

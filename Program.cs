@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using pethub.Data;
 using pethub.Hubs;
-using pethub.Services;
+using pethub.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,9 +41,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // SignalR (Real-time Chat)
 builder.Services.AddSignalR();
 
-// HTTP Client for External APIs (ViaCEP)
-builder.Services.AddHttpClient<CepService>();
-
 // CORS: Allow Frontend to access Backend
 var allowedOrigins = frontendUrl.Split([';', ','], StringSplitOptions.RemoveEmptyEntries);
 
@@ -79,6 +76,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// --- GLOBAL EXCEPTION HANDLER ---
+// This middleware catches any error from the code below it
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+// --------------------------------
 
 // Apply CORS Policy (Must be before Authorization)
 app.UseCors("AllowFrontend");

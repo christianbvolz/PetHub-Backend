@@ -1,5 +1,3 @@
-using BCrypt.Net;
-
 namespace pethub.Utils;
 
 public static class PasswordHelper
