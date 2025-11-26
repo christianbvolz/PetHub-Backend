@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using pethub.Data;
 using pethub.Hubs;
 using pethub.Middlewares;
+using pethub.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +62,9 @@ builder.Services.AddControllers();
 // Swagger Documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Custom Services (Repositories, etc.)
+builder.Services.AddScoped<IPetRepository, PetRepository>();
 
 // ==================================================================
 // 3. MIDDLEWARE PIPELINE

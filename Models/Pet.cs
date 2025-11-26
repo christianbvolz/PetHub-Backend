@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using pethub.Enums;
 
 namespace pethub.Models;
 
@@ -6,27 +8,20 @@ public class Pet
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
-    // --- FILTERS (Crucial for Adoption) ---
+    [Required]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PetGender Gender { get; set; }
 
-    // "Dog", "Cat", "Bird", etc.
-    public string Species { get; set; } = string.Empty;
+    [Required]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PetSize Size { get; set; }
 
-    // "Male" or "Female"
-    public string Gender { get; set; } = string.Empty;
-
-    // "Small", "Medium", "Large"
-    public string Size { get; set; } = string.Empty;
-
-    // Stores total months.
-    // Logic: Frontend converts "2 Years" to 24 before sending.
+    [Required]
     public int AgeInMonths { get; set; }
 
-    public string Breed { get; set; } = string.Empty;
-
-    public string Color { get; set; } = string.Empty;
-
+    [Required]
     public string Description { get; set; } = string.Empty;
 
     // --- HEALTH INFO ---
@@ -37,12 +32,31 @@ public class Pet
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // --- RELATIONSHIPS ---
+
     // Foreign Key for User (Owner)
+    [Required]
     public int UserId { get; set; }
 
     [JsonIgnore]
     public User? User { get; set; }
 
+    // Foreign Key for Species
+    [Required]
+    public int SpeciesId { get; set; }
+
+    [JsonIgnore]
+    public Species? Species { get; set; }
+
+    // Foreign Key for Breed
+    [Required]
+    public int BreedId { get; set; }
+
+    [JsonIgnore]
+    public Breed? Breed { get; set; }
+
+    public List<PetTag> PetTags { get; set; } = [];
+
     // Navigation Property
-    public List<PetImage> Images { get; set; } = new();
+    public List<PetImage> Images { get; set; } = [];
 }
