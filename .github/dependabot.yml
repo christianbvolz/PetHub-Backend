@@ -1,6 +1,5 @@
 version: 2
 updates:
-  # Atualizações de pacotes NuGet
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
