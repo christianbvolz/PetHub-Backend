@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using pethub.Enums;
 
@@ -8,6 +9,7 @@ public class Pet
 {
     public int Id { get; set; }
 
+    [MaxLength(50)]
     public string? Name { get; set; }
 
     [Required]
@@ -21,8 +23,8 @@ public class Pet
     [Required]
     public int AgeInMonths { get; set; }
 
-    [Required]
-    public string Description { get; set; } = string.Empty;
+    [MaxLength(1000)]
+    public string? Description { get; set; }
 
     // --- HEALTH INFO ---
     public bool IsCastrated { get; set; } = false;
@@ -30,7 +32,7 @@ public class Pet
 
     public bool IsAdopted { get; set; } = false;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     // --- RELATIONSHIPS ---
 

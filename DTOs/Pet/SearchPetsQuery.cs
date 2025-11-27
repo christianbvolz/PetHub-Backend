@@ -23,14 +23,30 @@ public class SearchPetsQuery
     [FromQuery(Name = "breed")]
     public string? Breed { get; set; }
 
-    // Tags filter - accepts multiple tag names separated by comma
-    // Example: ?tags=Branco,Listrado
-    [FromQuery(Name = "tags")]
-    public string? Tags { get; set; }
+    // Color tags filter - accepts multiple color names separated by comma
+    // Example: ?colors=Branco,Preto
+    [FromQuery(Name = "colors")]
+    public string? Colors { get; set; }
+
+    // Pattern tag filter - accepts only one pattern name
+    // Example: ?pattern=Listrado
+    [FromQuery(Name = "pattern")]
+    public string? Pattern { get; set; }
+
+    // Coat tag filter - accepts only one coat type
+    // Example: ?coat=Curto
+    [FromQuery(Name = "coat")]
+    public string? Coat { get; set; }
 
     [FromQuery(Name = "age")]
     public AgeRangeFilter? AgeRange { get; set; }
 
     [FromQuery(Name = "posted")]
     public PostedDateFilter? PostedDate { get; set; }
+
+    [FromQuery(Name = "page")]
+    public int Page { get; set; } = 1;
+
+    [FromQuery(Name = "pageSize")]
+    public int PageSize { get; set; } = 10;
 }

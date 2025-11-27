@@ -16,5 +16,5 @@ public class Tag
     public TagCategory Category { get; set; }
 
     [JsonIgnore]
-    public List<PetTag> PetTags { get; set; } = new();
+    public List<PetTag> PetTags { get; set; } = [];
 }

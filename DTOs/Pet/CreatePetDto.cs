@@ -5,6 +5,7 @@ namespace pethub.DTOs.Pet;
 
 public class CreatePetDto
 {
+    [MaxLength(50)]
     public string? Name { get; set; }
 
     [Required]
@@ -20,17 +21,19 @@ public class CreatePetDto
     public PetSize Size { get; set; }
 
     [Required]
-    [Range(0, 1200)] // 0 months to 100 years
+    [Range(0, 1200)]
     public int AgeInMonths { get; set; }
 
-    [Required]
-    public string Description { get; set; } = string.Empty;
+    [MaxLength(1000)]
+    public string? Description { get; set; }
 
     public bool IsCastrated { get; set; } = false;
     public bool IsVaccinated { get; set; } = false;
 
-    public List<int> TagIds { get; set; } = [];
-
-    // The list of image URLs will be provided in the request body
+    [Required]
+    [MinLength(1)]
+    [MaxLength(6)]
     public List<string> ImageUrls { get; set; } = [];
+
+    public List<int> TagIds { get; set; } = [];
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using pethub.Data;
+using pethub.DTOs.Common;
 using pethub.DTOs.Pet;
 using pethub.Enums;
 using pethub.Models;
@@ -8,7 +9,7 @@ namespace pethub.Services;
 
 public class PetRepository(AppDbContext context) : IPetRepository
 {
-    public async Task<IEnumerable<Pet>> SearchAsync(SearchPetsQuery query)
+    public async Task<PagedResult<Pet>> SearchAsync(SearchPetsQuery query)
     {
         var queryable = context
             .Pets.Include(p => p.User)
@@ -82,25 +83,73 @@ public class PetRepository(AppDbContext context) : IPetRepository
             };
         }
 
-        // --- TAGS FILTER ---
-        if (!string.IsNullOrWhiteSpace(query.Tags))
+        // --- COLOR TAGS FILTER (múltiplas cores) ---
+        if (!string.IsNullOrWhiteSpace(query.Colors))
         {
-            var tagNames = query
-                .Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(t => t.Trim())
+            var colorNames = query
+                .Colors.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(c => c.Trim())
                 .ToList();
 
-            if (tagNames.Count != 0)
+            if (colorNames.Count != 0)
             {
-                foreach (var tagName in tagNames)
+                foreach (var colorName in colorNames)
                 {
                     queryable = queryable.Where(p =>
-                        p.PetTags.Any(pt => pt.Tag != null && pt.Tag.Name == tagName)
+                        p.PetTags.Any(pt =>
+                            pt.Tag != null
+                            && pt.Tag.Name == colorName
+                            && pt.Tag.Category == TagCategory.Color
+                        )
                     );
                 }
             }
         }
 
-        return await queryable.ToListAsync();
+        // --- PATTERN TAG FILTER (apenas um padrão) ---
+        if (!string.IsNullOrWhiteSpace(query.Pattern))
+        {
+            queryable = queryable.Where(p =>
+                p.PetTags.Any(pt =>
+                    pt.Tag != null
+                    && pt.Tag.Name == query.Pattern
+                    && pt.Tag.Category == TagCategory.Pattern
+                )
+            );
+        }
+
+        // --- COAT TAG FILTER (apenas um tipo de pelagem) ---
+        if (!string.IsNullOrWhiteSpace(query.Coat))
+        {
+            queryable = queryable.Where(p =>
+                p.PetTags.Any(pt =>
+                    pt.Tag != null
+                    && pt.Tag.Name == query.Coat
+                    && pt.Tag.Category == TagCategory.Coat
+                )
+            );
+        }
+
+        // --- PAGINATION ---
+        // Ensure page is at least 1
+        var page = Math.Max(1, query.Page);
+        var pageSize = Math.Max(1, Math.Min(100, query.PageSize)); // Max 100 items per page
+
+        // Execute queries sequentially to avoid DbContext concurrency issues
+        var totalCount = await queryable.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        var items = await queryable.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<Pet>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages,
+            HasPreviousPage = page > 1,
+            HasNextPage = page < totalPages,
+        };
     }
 }

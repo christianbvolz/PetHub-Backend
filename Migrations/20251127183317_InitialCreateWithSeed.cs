@@ -7,12 +7,57 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pethub.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreateWithSeed : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase().Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "Species",
+                    columns: table => new
+                    {
+                        Id = table
+                            .Column<int>(type: "int", nullable: false)
+                            .Annotation(
+                                "MySql:ValueGenerationStrategy",
+                                MySqlValueGenerationStrategy.IdentityColumn
+                            ),
+                        Name = table
+                            .Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Species", x => x.Id);
+                    }
+                )
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "Tags",
+                    columns: table => new
+                    {
+                        Id = table
+                            .Column<int>(type: "int", nullable: false)
+                            .Annotation(
+                                "MySql:ValueGenerationStrategy",
+                                MySqlValueGenerationStrategy.IdentityColumn
+                            ),
+                        Name = table
+                            .Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Category = table.Column<int>(type: "int", nullable: false),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Tags", x => x.Id);
+                    }
+                )
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
@@ -68,6 +113,36 @@ namespace pethub.Migrations
 
             migrationBuilder
                 .CreateTable(
+                    name: "Breeds",
+                    columns: table => new
+                    {
+                        Id = table
+                            .Column<int>(type: "int", nullable: false)
+                            .Annotation(
+                                "MySql:ValueGenerationStrategy",
+                                MySqlValueGenerationStrategy.IdentityColumn
+                            ),
+                        Name = table
+                            .Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        SpeciesId = table.Column<int>(type: "int", nullable: false),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Breeds", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_Breeds_Species_SpeciesId",
+                            column: x => x.SpeciesId,
+                            principalTable: "Species",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
                     name: "Pets",
                     columns: table => new
                     {
@@ -78,36 +153,44 @@ namespace pethub.Migrations
                                 MySqlValueGenerationStrategy.IdentityColumn
                             ),
                         Name = table
-                            .Column<string>(type: "longtext", nullable: false)
+                            .Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
                             .Annotation("MySql:CharSet", "utf8mb4"),
-                        Species = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Gender = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Size = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Gender = table.Column<int>(type: "int", nullable: false),
+                        Size = table.Column<int>(type: "int", nullable: false),
                         AgeInMonths = table.Column<int>(type: "int", nullable: false),
-                        Breed = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Color = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
                         Description = table
-                            .Column<string>(type: "longtext", nullable: false)
+                            .Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true)
                             .Annotation("MySql:CharSet", "utf8mb4"),
                         IsCastrated = table.Column<bool>(type: "tinyint(1)", nullable: false),
                         IsVaccinated = table.Column<bool>(type: "tinyint(1)", nullable: false),
                         IsAdopted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                        CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                        CreatedAt = table
+                            .Column<DateTime>(type: "datetime(6)", nullable: false)
+                            .Annotation(
+                                "MySql:ValueGenerationStrategy",
+                                MySqlValueGenerationStrategy.IdentityColumn
+                            ),
                         UserId = table.Column<int>(type: "int", nullable: false),
+                        SpeciesId = table.Column<int>(type: "int", nullable: false),
+                        BreedId = table.Column<int>(type: "int", nullable: false),
                     },
                     constraints: table =>
                     {
                         table.PrimaryKey("PK_Pets", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_Pets_Breeds_BreedId",
+                            column: x => x.BreedId,
+                            principalTable: "Breeds",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Restrict
+                        );
+                        table.ForeignKey(
+                            name: "FK_Pets_Species_SpeciesId",
+                            column: x => x.SpeciesId,
+                            principalTable: "Species",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Restrict
+                        );
                         table.ForeignKey(
                             name: "FK_Pets_Users_UserId",
                             column: x => x.UserId,
@@ -178,7 +261,12 @@ namespace pethub.Migrations
                             ),
                         UserId = table.Column<int>(type: "int", nullable: false),
                         PetId = table.Column<int>(type: "int", nullable: false),
-                        FavoritedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                        FavoritedAt = table
+                            .Column<DateTime>(type: "datetime(6)", nullable: false)
+                            .Annotation(
+                                "MySql:ValueGenerationStrategy",
+                                MySqlValueGenerationStrategy.IdentityColumn
+                            ),
                     },
                     constraints: table =>
                     {
@@ -213,7 +301,7 @@ namespace pethub.Migrations
                                 MySqlValueGenerationStrategy.IdentityColumn
                             ),
                         Url = table
-                            .Column<string>(type: "longtext", nullable: false)
+                            .Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: false)
                             .Annotation("MySql:CharSet", "utf8mb4"),
                         PetId = table.Column<int>(type: "int", nullable: false),
                     },
@@ -224,6 +312,35 @@ namespace pethub.Migrations
                             name: "FK_PetImages_Pets_PetId",
                             column: x => x.PetId,
                             principalTable: "Pets",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "PetTags",
+                    columns: table => new
+                    {
+                        PetId = table.Column<int>(type: "int", nullable: false),
+                        TagId = table.Column<int>(type: "int", nullable: false),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_PetTags", x => new { x.PetId, x.TagId });
+                        table.ForeignKey(
+                            name: "FK_PetTags_Pets_PetId",
+                            column: x => x.PetId,
+                            principalTable: "Pets",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                        table.ForeignKey(
+                            name: "FK_PetTags_Tags_TagId",
+                            column: x => x.TagId,
+                            principalTable: "Tags",
                             principalColumn: "Id",
                             onDelete: ReferentialAction.Cascade
                         );
@@ -263,6 +380,12 @@ namespace pethub.Migrations
                     }
                 )
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Breeds_SpeciesId",
+                table: "Breeds",
+                column: "SpeciesId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChatMessages_ConversationId",
@@ -306,7 +429,21 @@ namespace pethub.Migrations
                 column: "PetId"
             );
 
+            migrationBuilder.CreateIndex(name: "IX_Pets_BreedId", table: "Pets", column: "BreedId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pets_SpeciesId",
+                table: "Pets",
+                column: "SpeciesId"
+            );
+
             migrationBuilder.CreateIndex(name: "IX_Pets_UserId", table: "Pets", column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PetTags_TagId",
+                table: "PetTags",
+                column: "TagId"
+            );
         }
 
         /// <inheritdoc />
@@ -318,11 +455,19 @@ namespace pethub.Migrations
 
             migrationBuilder.DropTable(name: "PetImages");
 
+            migrationBuilder.DropTable(name: "PetTags");
+
             migrationBuilder.DropTable(name: "Conversations");
+
+            migrationBuilder.DropTable(name: "Tags");
 
             migrationBuilder.DropTable(name: "Pets");
 
+            migrationBuilder.DropTable(name: "Breeds");
+
             migrationBuilder.DropTable(name: "Users");
+
+            migrationBuilder.DropTable(name: "Species");
         }
     }
 }

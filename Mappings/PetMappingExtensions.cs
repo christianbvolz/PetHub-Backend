@@ -23,7 +23,7 @@ public static class PetMappingExtensions
                     Name = pt.Tag?.Name ?? string.Empty,
                     Category = pt.Tag?.Category ?? default,
                 })
-                .ToList() ?? new List<TagDto>();
+                .ToList() ?? [];
 
         return new PetResponseDto
         {
@@ -34,7 +34,7 @@ public static class PetMappingExtensions
             Gender = pet.Gender,
             Size = pet.Size,
             AgeInMonths = pet.AgeInMonths,
-            Description = pet.Description,
+            Description = pet.Description ?? string.Empty,
             IsCastrated = pet.IsCastrated,
             IsVaccinated = pet.IsVaccinated,
             IsAdopted = pet.IsAdopted,

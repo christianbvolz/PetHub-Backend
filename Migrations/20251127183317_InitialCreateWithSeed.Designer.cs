@@ -12,8 +12,8 @@ using pethub.Data;
 namespace pethub.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251125024359_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251127183317_InitialCreateWithSeed")]
+    partial class InitialCreateWithSeed
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,29 @@ namespace pethub.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+
+            modelBuilder.Entity("pethub.Models.Breed", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<int>("SpeciesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SpeciesId");
+
+                    b.ToTable("Breeds");
+                });
 
             modelBuilder.Entity("pethub.Models.ChatMessage", b =>
                 {
@@ -98,24 +121,21 @@ namespace pethub.Migrations
                     b.Property<int>("AgeInMonths")
                         .HasColumnType("int");
 
-                    b.Property<string>("Breed")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<int>("BreedId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<DateTime>("CreatedAt"));
 
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsAdopted")
                         .HasColumnType("tinyint(1)");
@@ -127,21 +147,23 @@ namespace pethub.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
-                    b.Property<string>("Size")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<int>("Size")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Species")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<int>("SpeciesId")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BreedId");
+
+                    b.HasIndex("SpeciesId");
 
                     b.HasIndex("UserId");
 
@@ -157,7 +179,10 @@ namespace pethub.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("FavoritedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<DateTime>("FavoritedAt"));
 
                     b.Property<int>("PetId")
                         .HasColumnType("int");
@@ -187,13 +212,68 @@ namespace pethub.Migrations
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PetId");
 
                     b.ToTable("PetImages");
+                });
+
+            modelBuilder.Entity("pethub.Models.PetTag", b =>
+                {
+                    b.Property<int>("PetId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TagId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PetId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("PetTags");
+                });
+
+            modelBuilder.Entity("pethub.Models.Species", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Species");
+                });
+
+            modelBuilder.Entity("pethub.Models.Tag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tags");
                 });
 
             modelBuilder.Entity("pethub.Models.User", b =>
@@ -264,6 +344,17 @@ namespace pethub.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("pethub.Models.Breed", b =>
+                {
+                    b.HasOne("pethub.Models.Species", "Species")
+                        .WithMany("Breeds")
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Species");
+                });
+
             modelBuilder.Entity("pethub.Models.ChatMessage", b =>
                 {
                     b.HasOne("pethub.Models.Conversation", "Conversation")
@@ -302,11 +393,27 @@ namespace pethub.Migrations
 
             modelBuilder.Entity("pethub.Models.Pet", b =>
                 {
+                    b.HasOne("pethub.Models.Breed", "Breed")
+                        .WithMany()
+                        .HasForeignKey("BreedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("pethub.Models.Species", "Species")
+                        .WithMany()
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("pethub.Models.User", "User")
                         .WithMany("Pets")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Breed");
+
+                    b.Navigation("Species");
 
                     b.Navigation("User");
                 });
@@ -341,6 +448,25 @@ namespace pethub.Migrations
                     b.Navigation("Pet");
                 });
 
+            modelBuilder.Entity("pethub.Models.PetTag", b =>
+                {
+                    b.HasOne("pethub.Models.Pet", "Pet")
+                        .WithMany("PetTags")
+                        .HasForeignKey("PetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("pethub.Models.Tag", "Tag")
+                        .WithMany("PetTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pet");
+
+                    b.Navigation("Tag");
+                });
+
             modelBuilder.Entity("pethub.Models.Conversation", b =>
                 {
                     b.Navigation("Messages");
@@ -349,6 +475,18 @@ namespace pethub.Migrations
             modelBuilder.Entity("pethub.Models.Pet", b =>
                 {
                     b.Navigation("Images");
+
+                    b.Navigation("PetTags");
+                });
+
+            modelBuilder.Entity("pethub.Models.Species", b =>
+                {
+                    b.Navigation("Breeds");
+                });
+
+            modelBuilder.Entity("pethub.Models.Tag", b =>
+                {
+                    b.Navigation("PetTags");
                 });
 
             modelBuilder.Entity("pethub.Models.User", b =>

@@ -5,19 +5,19 @@ namespace pethub.DTOs.Pet;
 
 public class PetResponseDto
 {
-    public int Id { get; set; }
+    public required int Id { get; set; }
     public string? Name { get; set; }
-    public string SpeciesName { get; set; } = string.Empty;
-    public string BreedName { get; set; } = string.Empty;
-    public PetGender Gender { get; set; }
-    public PetSize Size { get; set; }
-    public int AgeInMonths { get; set; }
-    public string Description { get; set; } = string.Empty;
-    public bool IsCastrated { get; set; }
-    public bool IsVaccinated { get; set; }
-    public bool IsAdopted { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public UserResponseDto? Owner { get; set; }
-    public List<TagDto> Tags { get; set; } = [];
-    public List<string> ImageUrls { get; set; } = [];
+    public required string SpeciesName { get; set; }
+    public required string BreedName { get; set; }
+    public required PetGender Gender { get; set; }
+    public required PetSize Size { get; set; }
+    public required int AgeInMonths { get; set; }
+    public required string Description { get; set; }
+    public required bool IsCastrated { get; set; }
+    public required bool IsVaccinated { get; set; }
+    public required bool IsAdopted { get; set; }
+    public required DateTime CreatedAt { get; set; }
+    public required UserResponseDto Owner { get; set; }
+    public required List<TagDto> Tags { get; set; }
+    public required List<string> ImageUrls { get; set; }
 }

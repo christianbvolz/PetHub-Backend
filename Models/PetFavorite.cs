@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace pethub.Models;
@@ -16,5 +17,5 @@ public class PetFavorite
     [JsonIgnore]
     public Pet? Pet { get; set; }
 
-    public DateTime FavoritedAt { get; set; } = DateTime.UtcNow;
+    public DateTime FavoritedAt { get; private set; } = DateTime.UtcNow;
 }

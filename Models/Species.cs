@@ -10,5 +10,5 @@ public class Species
     [MaxLength(50)]
     public string Name { get; set; } = string.Empty;
 
-    public List<Breed> Breeds { get; set; } = new();
+    public List<Breed> Breeds { get; set; } = [];
 }

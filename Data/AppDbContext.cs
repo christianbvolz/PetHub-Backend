@@ -82,5 +82,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(pt => pt.Tag)
             .WithMany(t => t.PetTags)
             .HasForeignKey(pt => pt.TagId);
+
+        // Configure Pet.CreatedAt to be set only on insert and never updated
+        modelBuilder
+            .Entity<Pet>()
+            .Property(p => p.CreatedAt)
+            .ValueGeneratedOnAdd()
+            .Metadata.SetAfterSaveBehavior(
+                Microsoft.EntityFrameworkCore.Metadata.PropertySaveBehavior.Ignore
+            );
+
+        // Configure PetFavorite.FavoritedAt to be set only on insert and never updated
+        modelBuilder
+            .Entity<PetFavorite>()
+            .Property(pf => pf.FavoritedAt)
+            .ValueGeneratedOnAdd()
+            .Metadata.SetAfterSaveBehavior(
+                Microsoft.EntityFrameworkCore.Metadata.PropertySaveBehavior.Ignore
+            );
     }
 }
