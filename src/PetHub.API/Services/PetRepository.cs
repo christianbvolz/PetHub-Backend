@@ -83,7 +83,7 @@ public class PetRepository(AppDbContext context) : IPetRepository
             };
         }
 
-        // --- COLOR TAGS FILTER (múltiplas cores) ---
+        // --- COLOR TAGS FILTER (multiple colors with AND) ---
         if (!string.IsNullOrWhiteSpace(query.Colors))
         {
             var colorNames = query
@@ -93,6 +93,7 @@ public class PetRepository(AppDbContext context) : IPetRepository
 
             if (colorNames.Count != 0)
             {
+                // Use AND logic: pet must have ALL specified colors
                 foreach (var colorName in colorNames)
                 {
                     queryable = queryable.Where(p =>
@@ -106,7 +107,7 @@ public class PetRepository(AppDbContext context) : IPetRepository
             }
         }
 
-        // --- PATTERN TAG FILTER (apenas um padrão) ---
+        // --- PATTERN TAG FILTER (single pattern only) ---
         if (!string.IsNullOrWhiteSpace(query.Pattern))
         {
             queryable = queryable.Where(p =>

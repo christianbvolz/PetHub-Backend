@@ -115,4 +115,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Start Application
-app.Run();
+app.Run(); // Required for WebApplicationFactory in integration tests
+
+public partial class Program { }

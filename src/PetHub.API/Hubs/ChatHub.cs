@@ -5,17 +5,17 @@ namespace pethub.Hubs;
 
 public class ChatHub : Hub
 {
-    // Método chamado quando alguém entra na tela de chat
+    // Method called when someone enters the chat screen
     public async Task JoinChat(string conversationId)
     {
-        // Adiciona o usuário (ConnectionId) a um grupo específico
+        // Adds the user (ConnectionId) to a specific group
         await Groups.AddToGroupAsync(Context.ConnectionId, conversationId);
     }
 
-    // Método chamado quando alguém envia uma mensagem
+    // Method called when someone sends a message
     public async Task SendMessage(string conversationId, string senderName, string message)
     {
-        // Envia APENAS para quem está nesse grupo (Sala)
+        // Sends ONLY to those in this group (Room)
         await Clients.Group(conversationId).SendAsync("ReceiveMessage", senderName, message);
     }
 }

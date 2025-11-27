@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetHub.API", "src\PetHub.API\pethub.csproj", "{F4BE197B-0ECE-6DF8-8865-117DD3322E10}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetHub.API", "src\PetHub.API\PetHub.API.csproj", "{F4BE197B-0ECE-6DF8-8865-117DD3322E10}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetHub.Tests", "tests\PetHub.Tests\PetHub.Tests.csproj", "{B5E1A4C2-8F3D-4E6A-9B7C-2D8E9A1F5C6B}"
 EndProject

@@ -1,0 +1,104 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # For full code analysis
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+    - name: Generate coverage report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: 'coverage/**/coverage.cobertura.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub'
+
+    - name: Upload coverage to artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coveragereport
+
+    - name: Publish coverage summary
+      run: |
+        if [ -f coveragereport/SummaryGithub.md ]; then
+          cat coveragereport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+        fi
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Check code formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+
+    - name: Run security scan
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.log
+        if grep -q "has the following vulnerable packages" security-scan.log; then
+          echo "::warning::Vulnerable packages detected"
+          cat security-scan.log
+        fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate

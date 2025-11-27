@@ -1,0 +1,32 @@
+version: 2
+updates:
+  # Atualizações de pacotes NuGet
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "christianbvolz"
+    labels:
+      - "dependencies"
+      - "nuget"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Atualizações de GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
