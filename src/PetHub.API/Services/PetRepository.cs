@@ -9,10 +9,24 @@ namespace PetHub.API.Services;
 
 public class PetRepository(AppDbContext context) : IPetRepository
 {
+    public async Task<Pet?> GetByIdAsync(int id)
+    {
+        return await context
+            .Pets.AsSplitQuery()
+            .Include(p => p.User)
+            .Include(p => p.Species)
+            .Include(p => p.Breed)
+            .Include(p => p.Images)
+            .Include(p => p.PetTags)
+                .ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
     public async Task<PagedResult<Pet>> SearchAsync(SearchPetsQuery query)
     {
         var queryable = context
-            .Pets.Include(p => p.User)
+            .Pets.AsSplitQuery()
+            .Include(p => p.User)
             .Include(p => p.Species)
             .Include(p => p.Breed)
             .Include(p => p.Images)
@@ -140,7 +154,11 @@ public class PetRepository(AppDbContext context) : IPetRepository
         var totalCount = await queryable.CountAsync();
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        var items = await queryable.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var items = await queryable
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         return new PagedResult<Pet>
         {
@@ -152,5 +170,84 @@ public class PetRepository(AppDbContext context) : IPetRepository
             HasPreviousPage = page > 1,
             HasNextPage = page < totalPages,
         };
+    }
+
+    public async Task<Pet> CreateAsync(CreatePetDto dto, int userId)
+    {
+        var pet = new Pet
+        {
+            Name = dto.Name,
+            SpeciesId = dto.SpeciesId,
+            BreedId = dto.BreedId,
+            Gender = dto.Gender,
+            Size = dto.Size,
+            AgeInMonths = dto.AgeInMonths,
+            Description = dto.Description,
+            IsCastrated = dto.IsCastrated,
+            IsVaccinated = dto.IsVaccinated,
+            UserId = userId,
+        };
+
+        context.Pets.Add(pet);
+        await context.SaveChangesAsync();
+
+        // Add Images
+        if (dto.ImageUrls.Count > 0)
+        {
+            var images = dto
+                .ImageUrls.Select(url => new PetImage { PetId = pet.Id, Url = url })
+                .ToList();
+
+            context.PetImages.AddRange(images);
+        }
+
+        // Add Tags
+        if (dto.TagIds.Count > 0)
+        {
+            var petTags = dto
+                .TagIds.Select(tagId => new PetTag { PetId = pet.Id, TagId = tagId })
+                .ToList();
+
+            context.PetTags.AddRange(petTags);
+        }
+
+        await context.SaveChangesAsync();
+
+        // Load relationships for response
+        await context.Entry(pet).Reference(p => p.User).LoadAsync();
+        await context.Entry(pet).Reference(p => p.Species).LoadAsync();
+        await context.Entry(pet).Reference(p => p.Breed).LoadAsync();
+        await context.Entry(pet).Collection(p => p.Images).LoadAsync();
+        await context
+            .Entry(pet)
+            .Collection(p => p.PetTags)
+            .Query()
+            .Include(pt => pt.Tag)
+            .LoadAsync();
+
+        return pet;
+    }
+
+    public async Task<bool> ValidateSpeciesExistsAsync(int speciesId)
+    {
+        return await context.Species.AnyAsync(s => s.Id == speciesId);
+    }
+
+    public async Task<bool> ValidateBreedBelongsToSpeciesAsync(int breedId, int speciesId)
+    {
+        return await context.Breeds.AnyAsync(b => b.Id == breedId && b.SpeciesId == speciesId);
+    }
+
+    public async Task<List<int>> ValidateTagsExistAsync(List<int> tagIds)
+    {
+        if (tagIds.Count == 0)
+            return [];
+
+        var existingTagIds = await context
+            .Tags.Where(t => tagIds.Contains(t.Id))
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        return tagIds.Except(existingTagIds).ToList();
     }
 }

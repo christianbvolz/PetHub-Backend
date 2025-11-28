@@ -10,6 +10,20 @@ namespace PetHub.API.Controllers;
 [Route("api/[controller]")]
 public class PetsController(IPetRepository petRepository) : ControllerBase
 {
+    // GET: api/pets/{id}
+    [HttpGet("{id}")]
+    public async Task<ActionResult<PetResponseDto>> GetPet(int id)
+    {
+        var pet = await petRepository.GetByIdAsync(id);
+
+        if (pet == null)
+        {
+            return NotFound($"Pet with ID {id} not found.");
+        }
+
+        return Ok(pet.ToResponseDto());
+    }
+
     // GET: api/pets/search?page=1&pageSize=10
     [HttpGet("search")]
     public async Task<ActionResult<PagedResult<PetResponseDto>>> SearchPets(
@@ -30,5 +44,39 @@ public class PetsController(IPetRepository petRepository) : ControllerBase
         };
 
         return Ok(result);
+    }
+
+    // POST: api/pets
+    [HttpPost]
+    public async Task<ActionResult<PetResponseDto>> CreatePet(CreatePetDto dto)
+    {
+        // TODO: Get UserId from authenticated user (for now, use hardcoded value)
+        const int userId = 1;
+
+        // Validate Species exists
+        if (!await petRepository.ValidateSpeciesExistsAsync(dto.SpeciesId))
+        {
+            return BadRequest($"Species with ID {dto.SpeciesId} not found.");
+        }
+
+        // Validate Breed exists and belongs to the Species
+        if (!await petRepository.ValidateBreedBelongsToSpeciesAsync(dto.BreedId, dto.SpeciesId))
+        {
+            return BadRequest(
+                $"Breed with ID {dto.BreedId} not found or doesn't belong to the specified species."
+            );
+        }
+
+        // Validate Tags exist
+        var invalidTagIds = await petRepository.ValidateTagsExistAsync(dto.TagIds);
+        if (invalidTagIds.Count > 0)
+        {
+            return BadRequest($"Invalid tag IDs: {string.Join(", ", invalidTagIds)}");
+        }
+
+        // Create Pet
+        var pet = await petRepository.CreateAsync(dto, userId);
+
+        return CreatedAtAction(nameof(GetPet), new { id = pet.Id }, pet.ToResponseDto());
     }
 }

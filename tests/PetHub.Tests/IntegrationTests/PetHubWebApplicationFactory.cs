@@ -12,6 +12,14 @@ namespace PetHub.Tests.IntegrationTests;
 /// </summary>
 public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _databaseName;
+
+    public PetHubWebApplicationFactory()
+    {
+        // Generate a unique database name for each factory instance
+        _databaseName = $"PetHubTestDb_{Guid.NewGuid()}";
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -27,10 +35,10 @@ public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
             }
 
             // Add in-memory database for testing
-            // Use root provider to share database across all tests in same fixture
+            // Use a unique database name to isolate tests
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseInMemoryDatabase("PetHubTestDb");
+                options.UseInMemoryDatabase(_databaseName);
             });
         });
 

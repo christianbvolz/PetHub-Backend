@@ -9,7 +9,7 @@ public class Breed
 
     [Required]
     [MaxLength(50)]
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     // Foreign Key for Species
     public int SpeciesId { get; set; }
