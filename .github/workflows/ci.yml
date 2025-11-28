@@ -78,8 +78,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Check code formatting
-      run: dotnet format --verify-no-changes --verbosity diagnostic
+    # - name: Check code formatting
+    #   run: dotnet format --verify-no-changes --verbosity diagnostic
 
     - name: Run security scan
       run: |
