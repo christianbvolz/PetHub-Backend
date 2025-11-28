@@ -1,4 +1,4 @@
-namespace pethub.Enums;
+namespace PetHub.API.Enums;
 
 public enum AdoptionStatus
 {

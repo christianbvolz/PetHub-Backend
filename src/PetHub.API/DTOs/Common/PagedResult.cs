@@ -1,4 +1,4 @@
-namespace pethub.DTOs.Common;
+namespace PetHub.API.DTOs.Common;
 
 public class PagedResult<T>
 {

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace pethub.Models;
+namespace PetHub.API.Models;
 
 public class Conversation
 {

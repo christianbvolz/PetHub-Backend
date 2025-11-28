@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace pethub.Migrations
+namespace PetHub.API.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreateWithSeed : Migration

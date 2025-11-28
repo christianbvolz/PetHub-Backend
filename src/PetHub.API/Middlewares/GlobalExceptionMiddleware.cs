@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace pethub.Middlewares;
+namespace PetHub.API.Middlewares;
 
 public class GlobalExceptionMiddleware(
     RequestDelegate next,

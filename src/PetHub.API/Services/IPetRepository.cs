@@ -1,8 +1,8 @@
-using pethub.DTOs.Common;
-using pethub.DTOs.Pet;
-using pethub.Models;
+using PetHub.API.DTOs.Common;
+using PetHub.API.DTOs.Pet;
+using PetHub.API.Models;
 
-namespace pethub.Services;
+namespace PetHub.API.Services;
 
 public interface IPetRepository
 {

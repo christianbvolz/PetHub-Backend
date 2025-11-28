@@ -1,6 +1,6 @@
-using pethub.Data;
-using pethub.Enums;
-using pethub.Models;
+using PetHub.API.Data;
+using PetHub.API.Enums;
+using PetHub.API.Models;
 
 namespace PetHub.Tests.IntegrationTests;
 

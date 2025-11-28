@@ -3,10 +3,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using pethub.Data;
-using pethub.DTOs.Common;
-using pethub.DTOs.Pet;
-using pethub.Enums;
+using PetHub.API.Data;
+using PetHub.API.DTOs.Common;
+using PetHub.API.DTOs.Pet;
+using PetHub.API.Enums;
 
 namespace PetHub.Tests.IntegrationTests;
 

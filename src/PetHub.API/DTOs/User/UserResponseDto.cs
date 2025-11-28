@@ -1,4 +1,4 @@
-namespace pethub.DTOs.User;
+namespace PetHub.API.DTOs.User;
 
 public class UserResponseDto
 {

@@ -1,4 +1,4 @@
-namespace pethub.Utils;
+namespace PetHub.API.Utils;
 
 public static class PasswordHelper
 {

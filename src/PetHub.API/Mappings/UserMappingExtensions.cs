@@ -1,7 +1,7 @@
-using pethub.DTOs.User;
-using pethub.Models;
+using PetHub.API.DTOs.User;
+using PetHub.API.Models;
 
-namespace pethub.Mappings;
+namespace PetHub.API.Mappings;
 
 public static class UserMappingExtensions
 {
