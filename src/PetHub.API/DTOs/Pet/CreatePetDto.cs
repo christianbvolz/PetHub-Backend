@@ -11,6 +11,7 @@ public class CreatePetDto
     [Required]
     public int SpeciesId { get; set; }
 
+    // Breed can be unknown (use BreedId for "Unknown" breed)
     [Required]
     public int BreedId { get; set; }
 
@@ -20,9 +21,9 @@ public class CreatePetDto
     [Required]
     public PetSize Size { get; set; }
 
-    [Required]
+    // Age 0 means unknown/estimated
     [Range(0, 1200)]
-    public int AgeInMonths { get; set; }
+    public int AgeInMonths { get; set; } = 0;
 
     [MaxLength(1000)]
     public string? Description { get; set; }

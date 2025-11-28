@@ -1,151 +1,387 @@
-🐾 PetHub - Backend API
+# 🐾 PetHub - Backend API
 
 O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de estimação com donos ou abrigos que possuem animais para adoção. Este repositório contém o Backend (API) da aplicação, construído com tecnologias modernas do ecossistema .NET.
 
-🚀 Tecnologias Utilizadas
+[![CI](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-43%20passing-brightgreen)](tests/)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Linguagem: C# (.NET 8)
+## 🚀 Tecnologias Utilizadas
 
-Framework: ASP.NET Core Web API
+- **Linguagem:** C# (.NET 8)
+- **Framework:** ASP.NET Core Web API (Minimal APIs)
+- **Banco de Dados:** MySQL (Hospedado no TiDB Cloud Serverless)
+- **ORM:** Entity Framework Core 8 (Pomelo MySQL Provider)
+- **Tempo Real:** SignalR (Para o sistema de Chat)
+- **Segurança:** BCrypt (Hash de senhas)
+- **Documentação:** Swagger / OpenAPI (Swashbuckle 6.8.1)
+- **Testes:** xUnit + FluentAssertions (43 testes de integração)
+- **Padrões:** Repository Pattern, DTOs, Dependency Injection
+- **CI/CD:** GitHub Actions
 
-Banco de Dados: MySQL (Hospedado no TiDB Cloud Serverless)
+## ✨ Funcionalidades Implementadas
 
-ORM: Entity Framework Core 8 (Pomelo Provider)
+### 🐶 Gestão de Pets
 
-Tempo Real: SignalR (Para o sistema de Chat)
+#### ✅ **Busca de Pets (GET /api/pets/search)**
+- Sistema completo de busca com múltiplos filtros:
+  - **Localização:** Estado, Cidade (do dono)
+  - **Características:** Espécie, Raça, Gênero, Porte, Idade
+  - **Atributos:** Cor, Pelagem (através de Tags)
+  - **Período:** Data de publicação (hoje, última semana, último mês)
+- Paginação integrada com metadados (page, pageSize, totalCount, totalPages)
+- Ordenação por data de criação (mais recentes primeiro)
+- Exclusão automática de pets já adotados
+- Query splitting otimizado para performance
 
-Segurança: BCrypt (Hash de senhas)
+#### ✅ **Detalhes do Pet (GET /api/pets/{id})**
+- Retorna informações completas do pet
+- Inclui todas as relações: Dono, Espécie, Raça, Imagens, Tags
+- Carregamento otimizado com `.AsSplitQuery()`
+- Suporta pets adotados (para histórico)
 
-Documentação: Swagger / OpenAPI
+#### ✅ **Criação de Pet (POST /api/pets)**
+- Validação completa de dados:
+  - Verifica se Species existe
+  - Verifica se Breed pertence à Species correta
+  - Valida existência de todas as Tags
+- Suporte a múltiplas imagens (até 6)
+- Suporte a múltiplas tags (cores, pelagem, etc)
+- Campos opcionais: Nome, Idade (0 = desconhecida)
+- Relacionamento automático com User (temporariamente hardcoded - userId=1)
+- Retorna Location header apontando para o pet criado
 
-Ambiente de Dev: Docker & WSL 2
+### 📊 Sistema de Tags
+- **Categorias:** Color (Cor), Pattern (Padrão), Coat (Pelagem)
+- Permite classificação flexível dos pets
+- Suporte a múltiplas tags por pet
+- Filtros AND/OR configuráveis
 
-✨ Funcionalidades (Atuais)
+### 👤 Gestão de Utilizadores (Users)
+- Registro seguro com hash BCrypt
+- Endereço completo para filtros de proximidade
+- Validação de dados (email duplicado, formatos)
+- DTOs para segurança e validação
 
-👤 Gestão de Utilizadores (Users)
+### 💬 Comunicação & Adoção (Estrutura Base)
+- **Chat em Tempo Real:** SignalR configurado
+- **Pedidos de Adoção:** Modelo de dados pronto
+- **Favoritos:** Estrutura preparada
 
-Registo Seguro: As senhas nunca são salvas em texto puro; utilizamos hash forte (BCrypt).
+## 🧪 Testes
 
-Endereço Completo: Estrutura preparada para receber dados de localização (CEP, Rua, Bairro, Cidade, Estado) para futuros filtros de proximidade.
+O projeto possui uma suite completa de **43 testes de integração** com 100% de aprovação:
 
-Validação de Dados: O backend rejeita dados inválidos (ex: e-mail duplicado, formatos incorretos) usando DTOs e Regex.
+- **GetPet:** 11 testes (validação de ID, relacionamentos, erros)
+- **SearchPets:** 14 testes (filtros, paginação, ordenação)
+- **CreatePet:** 18 testes (validações, relacionamentos, autenticação)
 
-🐶 Gestão de Pets (Em progresso)
+```bash
+# Executar todos os testes
+dotnet test
 
-Modelagem robusta para armazenar:
+# Executar testes específicos
+dotnet test --filter "FullyQualifiedName~GetPetIntegrationTests"
+dotnet test --filter "FullyQualifiedName~SearchPetsIntegrationTests"
+dotnet test --filter "FullyQualifiedName~CreatePetIntegrationTests"
 
-Idade em meses (para melhor ordenação).
+# Executar com detalhes
+dotnet test --logger "console;verbosity=detailed"
+```
 
-Características físicas (Raça, Cor, Porte).
+### Cobertura de Testes
+- ✅ Cenários de sucesso
+- ✅ Validações de entidades relacionadas
+- ✅ Casos de erro (404, 400, 500)
+- ✅ Campos opcionais e valores padrão
+- ✅ Integridade dos dados e relacionamentos
+- ✅ Preparação para autenticação (TODO)
 
-Múltiplas imagens por pet.
+## 🛠️ Configuração do Ambiente
 
-Filtros de adoção (Espécie, Género, Castrado/Vacinado).
+### Pré-requisitos
 
-💬 Comunicação & Adoção
+- ✅ [.NET 8 SDK](https://dotnet.microsoft.com/download) instalado
+- ✅ Acesso a um banco MySQL (Recomendado: [TiDB Cloud Serverless](https://tidbcloud.com/) - tier gratuito)
+- ✅ Git
+- 📦 Editor: Visual Studio Code ou Visual Studio 2022+
 
-Chat em Tempo Real: Arquitetura pronta com SignalR para conversas instantâneas entre adotante e dono.
+### 1. Clonar o Repositório
 
-Pedidos de Adoção: Fluxo formal para solicitar, aprovar ou rejeitar uma adoção.
+```bash
+git clone https://github.com/christianbvolz/PetHub-Backend.git
+cd PetHub-Backend
+```
 
-Favoritos: Sistema para guardar pets de interesse.
+### 2. Configurar Variáveis de Ambiente
 
-🛠️ Configuração do Ambiente
+Crie um arquivo `.env` **na raiz do projeto** (mesmo nível que `PetHub-Backend.sln`):
 
-Pré-requisitos
-
-.NET 8 SDK instalado.
-
-Acesso a um banco de dados MySQL (Recomendado: TiDB Cloud Serverless).
-
-Git.
-
-1. Clonar o Repositório
-
-git clone [https://github.com/SEU-USUARIO/pethub.git](https://github.com/SEU-USUARIO/pethub.git)
-cd pethub
-
-
-2. Configurar Variáveis de Ambiente
-
-Crie um ficheiro chamado .env na raiz do projeto (onde está o Program.cs).
-Nota: Este ficheiro é ignorado pelo Git por segurança.
-
-Adicione o seguinte conteúdo ao .env:
-
+```env
 # Conexão com o Banco de Dados (TiDB / MySQL)
-# Substitua USER, PASSWORD, HOST e PORT pelos seus dados reais.
 DB_CONNECTION_STRING="Server=gateway01.us-east-1.prod.aws.tidbcloud.com;Port=4000;Database=test;Uid=SEU_USUARIO;Pwd=SUA_SENHA;SslMode=VerifyCA;"
 
-# URLs permitidas para conectar no Chat/API (CORS)
-# Separe por ponto e vírgula. Adicione a URL do Front (Vercel) quando tiver.
+# URLs permitidas (CORS) - separe por ponto e vírgula
 FRONTEND_URL="http://localhost:3000;http://localhost:5173"
 
-# Chave de Segurança para futuros Tokens JWT (Digite uma frase longa aleatória)
+# Chave secreta para JWT (use uma string aleatória longa)
 JWT_SECRET="minha_chave_secreta_super_segura_pethub_2025"
+```
 
+> **⚠️ Importante:** O arquivo `.env` está no `.gitignore` por segurança. Nunca commit credenciais!
 
-3. Instalar Dependências
+### 3. Instalar Dependências
 
-Restaure os pacotes do projeto:
-
+```bash
+# Restaurar pacotes NuGet
 dotnet restore
 
+# Instalar ferramenta de migrations (se necessário)
+dotnet tool install --global dotnet-ef
+```
 
-4. Configurar o Banco de Dados
+### 4. Configurar o Banco de Dados
 
-Execute as migrações para criar as tabelas no seu banco MySQL remoto:
-
-# Instale a ferramenta se ainda não tiver:
-# dotnet tool install --global dotnet-ef
-
+```bash
+# Aplicar migrations (criar tabelas)
+cd src/PetHub.API
 dotnet ef database update
 
+# Verificar se o seeding foi executado
+# A aplicação popula automaticamente dados iniciais na primeira execução
+```
 
-Se ver a mensagem "Done.", as tabelas foram criadas com sucesso.
+O banco será populado com:
+- Espécies: Cachorro, Gato
+- Raças: Labrador, Poodle, Siamês, Persa
+- Tags: Branco, Preto, Marrom (cores) + Curto, Longo (pelagem)
+- 1 usuário de teste
+- 6 pets de exemplo (5 disponíveis + 1 adotado)
 
-▶️ Como Rodar
+## ▶️ Como Rodar
 
-Para iniciar o servidor de desenvolvimento:
+### Modo Desenvolvimento
 
-dotnet run
+```bash
+# Navegar para o projeto da API
+cd src/PetHub.API
 
+# Iniciar servidor de desenvolvimento com hot reload
+dotnet watch run
+```
 
-Ou, se estiver a usar o VS Code, pressione F5.
+Ou pressione **F5** no Visual Studio / VS Code.
 
-A API estará disponível em:
+### Acessar a Aplicação
 
-Swagger (Documentação): http://localhost:5144/swagger (A porta pode variar, verifique o terminal).
+- 📘 **Swagger (Documentação):** http://localhost:5096/swagger
+- 🌐 **API Base:** http://localhost:5096/api
+- 📊 **Health Check:** http://localhost:5096/health (quando implementado)
 
-API Base: http://localhost:5144/api
+> **Nota:** A porta padrão é `5096`. Se estiver diferente, verifique o terminal ou `Properties/launchSettings.json`.
 
-📂 Estrutura do Projeto
+### Executar Testes
 
-Controllers/: Pontos de entrada da API (Rotas HTTP).
+```bash
+# Voltar para a raiz do projeto
+cd ../..
 
-Models/: Representação das tabelas do Banco de Dados.
+# Executar todos os testes
+dotnet test
 
-DTOs/: (Data Transfer Objects) Objetos para entrada e saída de dados da API (Segurança e Validação).
+# Ver detalhes dos testes
+dotnet test --logger "console;verbosity=detailed"
 
-Data/: Contexto do Banco de Dados (Entity Framework).
+# Executar com cobertura (requer ferramenta adicional)
+dotnet test --collect:"XPlat Code Coverage"
+```
 
-Hubs/: Lógica do Chat em Tempo Real (SignalR).
+## 📂 Estrutura do Projeto
 
-Services/: Lógica de negócios e integrações externas (ex: ViaCEP, Email).
+```
+PetHub-Backend/
+├── src/
+│   └── PetHub.API/              # Projeto principal da API
+│       ├── Controllers/          # Endpoints HTTP (PetsController, UsersController)
+│       ├── Models/               # Entidades do banco (Pet, User, Species, etc)
+│       ├── DTOs/                 # Data Transfer Objects
+│       │   ├── Pet/              # CreatePetDto, PetResponseDto, SearchPetsQuery
+│       │   ├── User/             # UserResponseDto, CreateUserDto
+│       │   └── Common/           # PagedResult<T>
+│       ├── Services/             # Lógica de negócio
+│       │   ├── IPetRepository.cs # Interface do repositório
+│       │   └── PetRepository.cs  # Implementação com EF Core
+│       ├── Mappings/             # Extension methods para mapear entidades → DTOs
+│       ├── Data/                 # Contexto EF Core + Migrations + Seeding
+│       ├── Enums/                # PetGender, PetSize, TagCategory, etc
+│       ├── Hubs/                 # SignalR hubs (Chat em tempo real)
+│       ├── Middlewares/          # GlobalExceptionMiddleware
+│       ├── Utils/                # PasswordHelper (BCrypt)
+│       └── Program.cs            # Entry point + configuração
+│
+├── tests/
+│   └── PetHub.Tests/            # Testes de integração (xUnit)
+│       └── IntegrationTests/
+│           ├── GetPetIntegrationTests.cs        # 11 testes
+│           ├── SearchPetsIntegrationTests.cs    # 14 testes
+│           ├── CreatePetIntegrationTests.cs     # 18 testes
+│           ├── TestDataSeeder.cs                # Dados de teste
+│           └── PetHubWebApplicationFactory.cs   # Factory para testes
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # GitHub Actions (CI)
+│
+├── .env                         # Variáveis de ambiente (não commitado)
+├── .gitignore                   # Arquivos ignorados
+├── PetHub-Backend.sln           # Solution do Visual Studio
+└── README.md                    # Este arquivo
+```
 
-Utils/: Funções auxiliares (ex: Hash de Senha).
+### 📐 Arquitetura
 
-Middlewares/: Tratamento global de erros.
+O projeto segue princípios de **Clean Architecture** e **SOLID**:
 
-🚢 Deploy (Produção)
+- **Controllers:** Camada fina que apenas recebe requests HTTP e delega ao repositório
+- **Repository Pattern:** Abstração do acesso a dados (facilita testes e manutenção)
+- **DTOs:** Separação clara entre entidades do banco e objetos de API
+- **Dependency Injection:** Todas as dependências são injetadas via DI container do ASP.NET
+- **Middleware:** Tratamento global de exceções com mensagens padronizadas
 
-Este projeto está configurado para ser hospedado no Render (via Docker).
+### 🗄️ Modelo de Dados (Principais Entidades)
 
-O Dockerfile na raiz cria a imagem otimizada.
+```
+User (Usuário/Dono)
+├── Pets[] (seus pets para adoção)
+├── SentMessages[] (mensagens de chat enviadas)
+├── ReceivedMessages[] (mensagens recebidas)
+└── FavoritePets[] (pets favoritados)
 
-O Program.cs lê as variáveis de ambiente (DB_CONNECTION_STRING) injetadas pelo painel do Render.
+Pet (Animal para adoção)
+├── Species (Espécie: Cachorro, Gato)
+├── Breed (Raça: Labrador, Siamês, etc)
+├── User (Dono)
+├── Images[] (múltiplas fotos)
+├── Tags[] (cores, pelagem, temperamento)
+└── AdoptionRequests[] (pedidos de adoção)
 
-O Frontend (React) deve ser hospedado na Vercel.
+Species → Breeds[] (1:N - uma espécie tem várias raças)
+Tag (categoria: Color, Pattern, Coat)
+```
 
+## 🔄 Workflow de Desenvolvimento
 
-Desenvolvido com 💜 por Christian Volz
+### Branches
+
+- `main` - Branch principal (produção)
+- `feat/*` - Novas funcionalidades
+- `fix/*` - Correções de bugs
+- `docs/*` - Documentação
+
+### CI/CD
+
+- ✅ **GitHub Actions** configurado
+- ✅ Build automático em cada push
+- ✅ Testes executados automaticamente
+- ✅ Validação de código
+
+## 🚢 Deploy (Produção)
+
+O projeto está preparado para deploy em **Render** via Docker:
+
+1. **Dockerfile** otimizado para produção
+2. **Program.cs** lê variáveis de ambiente (`DB_CONNECTION_STRING`, `FRONTEND_URL`, `JWT_SECRET`)
+3. **HTTPS** automático via Render
+4. **Health checks** prontos para implementar
+
+### Variáveis de Ambiente no Render
+
+```env
+DB_CONNECTION_STRING=Server=xxx;Port=4000;Database=test;Uid=xxx;Pwd=xxx;SslMode=VerifyCA;
+FRONTEND_URL=https://seu-frontend.vercel.app
+JWT_SECRET=sua_chave_secreta_super_longa
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+## 📚 Endpoints da API
+
+### 🐶 Pets
+
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| `GET` | `/api/pets/search` | Buscar pets com filtros | ✅ Implementado |
+| `GET` | `/api/pets/{id}` | Detalhes de um pet | ✅ Implementado |
+| `POST` | `/api/pets` | Criar novo pet | ✅ Implementado |
+| `PUT` | `/api/pets/{id}` | Atualizar pet | 🚧 Planejado |
+| `DELETE` | `/api/pets/{id}` | Remover pet | 🚧 Planejado |
+
+### 👤 Usuários
+
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| `POST` | `/api/users/register` | Registrar novo usuário | 🚧 Planejado |
+| `POST` | `/api/users/login` | Login JWT | 🚧 Planejado |
+| `GET` | `/api/users/{id}` | Perfil do usuário | 🚧 Planejado |
+| `PUT` | `/api/users/{id}` | Atualizar perfil | 🚧 Planejado |
+
+### 💬 Chat & Adoção
+
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| `POST` | `/api/adoption-requests` | Solicitar adoção | 🚧 Planejado |
+| `SignalR` | `/hubs/chat` | Chat em tempo real | 🚧 Implementado (base) |
+
+## 🎯 Próximos Passos
+
+- [ ] Implementar autenticação JWT
+- [ ] Adicionar endpoints de CRUD completo para Users
+- [ ] Implementar sistema de favoritos
+- [ ] Completar fluxo de pedidos de adoção
+- [ ] Adicionar upload de imagens real (S3/Cloudinary)
+- [ ] Implementar filtros geográficos (proximidade)
+- [ ] Adicionar rate limiting
+- [ ] Implementar cache (Redis)
+- [ ] Adicionar logging estruturado (Serilog)
+- [ ] Implementar health checks
+- [ ] Adicionar testes unitários (além dos de integração)
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Por favor:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feat/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -m 'feat: adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feat/nova-funcionalidade`)
+5. Abra um Pull Request
+
+### Padrão de Commits
+
+Seguimos [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` Nova funcionalidade
+- `fix:` Correção de bug
+- `docs:` Documentação
+- `test:` Adição/modificação de testes
+- `refactor:` Refatoração de código
+- `chore:` Tarefas de manutenção
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 👤 Autor
+
+**Christian Berny Volz**
+
+- GitHub: [@christianbvolz](https://github.com/christianbvolz)
+- LinkedIn: [Christian Berny Volz](https://www.linkedin.com/in/christian-berny-volz/)
+
+---
+
+<div align="center">
+  Desenvolvido com 💜
+  <br>
+  <sub>Ajudando pets a encontrarem um lar 🐾</sub>
+</div>

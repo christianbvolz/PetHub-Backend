@@ -1,8 +1,17 @@
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using PetHub.API.Data;
 using PetHub.API.Hubs;
 using PetHub.API.Middlewares;
 using PetHub.API.Services;
+
+// Load .env file from project root
+var root = Directory.GetCurrentDirectory();
+var envFile = Path.Combine(root, "..", "..", ".env");
+if (File.Exists(envFile))
+{
+    Env.Load(envFile);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

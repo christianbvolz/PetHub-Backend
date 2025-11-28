@@ -337,7 +337,7 @@ public static class DbSeeder
             "Oliver",
         };
 
-        for (int i = 1; i <= 50; i++)
+        for (var i = 1; i <= 50; i++)
         {
             var userId = ((i - 1) % 3) + 1; // Distribute pets among 3 users
             var speciesId = random.Next(1, 3); // Only Dogs and Cats for simplicity
@@ -370,7 +370,7 @@ public static class DbSeeder
 
         // --- SEED PET IMAGES ---
         var petImages = new List<PetImage>();
-        for (int i = 1; i <= 50; i++)
+        for (var i = 1; i <= 50; i++)
         {
             var pet = pets[i - 1];
             var imageCount = random.Next(1, 4); // 1 to 3 images per pet
@@ -390,7 +390,7 @@ public static class DbSeeder
 
         // --- SEED PET TAGS ---
         var petTags = new List<PetTag>();
-        for (int i = 1; i <= 50; i++)
+        for (var i = 1; i <= 50; i++)
         {
             // Add 1-2 color tags
             var colorCount = random.Next(1, 3);
