@@ -74,6 +74,7 @@ builder.Services.AddSwaggerGen();
 
 // Custom Services (Repositories, etc.)
 builder.Services.AddScoped<IPetRepository, PetRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // ==================================================================
 // 3. MIDDLEWARE PIPELINE
