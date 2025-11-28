@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using pethub.Data;
-using pethub.DTOs.User;
-using pethub.Mappings;
-using pethub.Models;
-using pethub.Utils;
+using PetHub.API.Data;
+using PetHub.API.DTOs.User;
+using PetHub.API.Mappings;
+using PetHub.API.Models;
+using PetHub.API.Utils;
 
-namespace pethub.Controllers;
+namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

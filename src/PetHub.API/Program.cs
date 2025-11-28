@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using pethub.Data;
-using pethub.Hubs;
-using pethub.Middlewares;
-using pethub.Services;
+using PetHub.API.Data;
+using PetHub.API.Hubs;
+using PetHub.API.Middlewares;
+using PetHub.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

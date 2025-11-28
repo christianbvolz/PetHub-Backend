@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using pethub.Enums;
+using PetHub.API.Enums;
 
-namespace pethub.Models;
+namespace PetHub.API.Models;
 
 public class Pet
 {

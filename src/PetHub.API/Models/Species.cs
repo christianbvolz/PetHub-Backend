@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace pethub.Models;
+namespace PetHub.API.Models;
 
 public class Species
 {

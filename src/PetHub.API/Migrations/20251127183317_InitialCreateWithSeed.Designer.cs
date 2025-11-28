@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using pethub.Data;
+using PetHub.API.Data;
 
 #nullable disable
 
-namespace pethub.Migrations
+namespace PetHub.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20251127183317_InitialCreateWithSeed")]

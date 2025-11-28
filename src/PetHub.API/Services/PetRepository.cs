@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using pethub.Data;
-using pethub.DTOs.Common;
-using pethub.DTOs.Pet;
-using pethub.Enums;
-using pethub.Models;
+using PetHub.API.Data;
+using PetHub.API.DTOs.Common;
+using PetHub.API.DTOs.Pet;
+using PetHub.API.Enums;
+using PetHub.API.Models;
 
-namespace pethub.Services;
+namespace PetHub.API.Services;
 
 public class PetRepository(AppDbContext context) : IPetRepository
 {

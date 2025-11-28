@@ -1,6 +1,6 @@
-using pethub.Enums;
+using PetHub.API.Enums;
 
-namespace pethub.DTOs.Pet;
+namespace PetHub.API.DTOs.Pet;
 
 public class TagDto
 {

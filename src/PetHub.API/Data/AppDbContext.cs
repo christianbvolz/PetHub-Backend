@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using pethub.Models;
+using PetHub.API.Models;
 
-namespace pethub.Data;
+namespace PetHub.API.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace pethub.Models;
+namespace PetHub.API.Models;
 
 public class PetTag
 {

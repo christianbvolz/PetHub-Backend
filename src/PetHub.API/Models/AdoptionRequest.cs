@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using pethub.Enums;
+using PetHub.API.Enums;
 
-namespace pethub.Models;
+namespace PetHub.API.Models;
 
 public class AdoptionRequest
 {

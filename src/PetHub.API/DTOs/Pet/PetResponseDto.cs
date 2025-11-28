@@ -1,7 +1,7 @@
-using pethub.DTOs.User;
-using pethub.Enums;
+using PetHub.API.DTOs.User;
+using PetHub.API.Enums;
 
-namespace pethub.DTOs.Pet;
+namespace PetHub.API.DTOs.Pet;
 
 public class PetResponseDto
 {

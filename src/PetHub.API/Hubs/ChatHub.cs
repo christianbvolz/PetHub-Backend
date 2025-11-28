@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
-using pethub.Models;
+using PetHub.API.Models;
 
-namespace pethub.Hubs;
+namespace PetHub.API.Hubs;
 
 public class ChatHub : Hub
 {

@@ -1,8 +1,8 @@
-using pethub.Enums;
-using pethub.Models;
-using pethub.Utils;
+using PetHub.API.Enums;
+using PetHub.API.Models;
+using PetHub.API.Utils;
 
-namespace pethub.Data;
+namespace PetHub.API.Data;
 
 public static class DbSeeder
 {

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace pethub.DTOs.User;
+namespace PetHub.API.DTOs.User;
 
 public class PatchUserDto
 {
