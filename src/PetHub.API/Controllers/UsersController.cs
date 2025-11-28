@@ -1,25 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PetHub.API.Data;
 using PetHub.API.DTOs.User;
 using PetHub.API.Mappings;
-using PetHub.API.Models;
-using PetHub.API.Utils;
+using PetHub.API.Services;
 
 namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController(AppDbContext context) : ControllerBase
+public class UsersController(IUserRepository userRepository) : ControllerBase
 {
     // GET: api/users
     // Retrieves all registered users
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers()
     {
-        var users = await context.Users.ToListAsync();
-
-        // Use the extension method to map the list cleanly
+        var users = await userRepository.GetAllAsync();
         return users.Select(u => u.ToResponseDto()).ToList();
     }
 
@@ -28,14 +23,13 @@ public class UsersController(AppDbContext context) : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<UserResponseDto>> GetUser(int id)
     {
-        var user = await context.Users.FindAsync(id);
+        var user = await userRepository.GetByIdAsync(id);
 
         if (user == null)
         {
             return NotFound($"User with ID {id} not found.");
         }
 
-        // Use the extension method to map the single object
         return user.ToResponseDto();
     }
 
@@ -44,32 +38,15 @@ public class UsersController(AppDbContext context) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<UserResponseDto>> CreateUser(CreateUserDto dto)
     {
-        // 1. Validation
-        if (await context.Users.AnyAsync(u => u.Email == dto.Email))
+        try
         {
-            return BadRequest("Email already registered.");
+            var user = await userRepository.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user.ToResponseDto());
         }
-
-        var user = new User
+        catch (InvalidOperationException ex)
         {
-            Name = dto.Name,
-            Email = dto.Email,
-            PasswordHash = PasswordHelper.HashPassword(dto.Password),
-            PhoneNumber = dto.PhoneNumber,
-            ZipCode = dto.ZipCode,
-            State = dto.State,
-            City = dto.City,
-            Neighborhood = dto.Neighborhood,
-            Street = dto.Street,
-            StreetNumber = dto.StreetNumber,
-            ProfilePictureUrl = "",
-        };
-
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-
-        // This converts the saved User entity back to a safe DTO
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user.ToResponseDto());
+            return BadRequest(ex.Message);
+        }
     }
 
     // PATCH: api/users/{id}
@@ -77,47 +54,20 @@ public class UsersController(AppDbContext context) : ControllerBase
     [HttpPatch("{id}")]
     public async Task<IActionResult> PatchUser(int id, PatchUserDto dto)
     {
-        var user = await context.Users.FindAsync(id);
-        if (user == null)
+        try
         {
-            return NotFound($"User with ID {id} not found.");
-        }
+            var success = await userRepository.UpdateAsync(id, dto);
 
-        // Conditional Updates
-        if (dto.Name != null)
-            user.Name = dto.Name;
-        if (dto.PhoneNumber != null)
-            user.PhoneNumber = dto.PhoneNumber;
-
-        if (dto.ZipCode != null)
-            user.ZipCode = dto.ZipCode;
-        if (dto.State != null)
-            user.State = dto.State;
-        if (dto.City != null)
-            user.City = dto.City;
-        if (dto.Neighborhood != null)
-            user.Neighborhood = dto.Neighborhood;
-        if (dto.Street != null)
-            user.Street = dto.Street;
-        if (dto.StreetNumber != null)
-            user.StreetNumber = dto.StreetNumber;
-
-        if (dto.Email != null && dto.Email != user.Email)
-        {
-            if (await context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id))
+            if (!success)
             {
-                return BadRequest("Email already in use by another account.");
+                return NotFound($"User with ID {id} not found.");
             }
-            user.Email = dto.Email;
-        }
 
-        if (!string.IsNullOrEmpty(dto.Password))
+            return Ok("User updated successfully.");
+        }
+        catch (InvalidOperationException ex)
         {
-            user.PasswordHash = PasswordHelper.HashPassword(dto.Password);
+            return BadRequest(ex.Message);
         }
-
-        await context.SaveChangesAsync();
-
-        return Ok("User updated successfully.");
     }
 }
