@@ -334,6 +334,8 @@ ASPNETCORE_ENVIRONMENT=Production
 
 ## 🎯 Próximos Passos
 
+### Backend (API)
+
 - [ ] Implementar autenticação JWT
 - [ ] Adicionar endpoints de CRUD completo para Users
 - [ ] Implementar sistema de favoritos
@@ -345,6 +347,113 @@ ASPNETCORE_ENVIRONMENT=Production
 - [ ] Adicionar logging estruturado (Serilog)
 - [ ] Implementar health checks
 - [ ] Adicionar testes unitários (além dos de integração)
+
+### Melhorias para SSR (Server-Side Rendering)
+
+Para suportar um frontend híbrido (SSR + CSR), algumas melhorias na API são recomendadas:
+
+- [ ] **Cache Headers:** Configurar ResponseCache em endpoints públicos (GET /api/pets)
+  - Permitir cache do lado do servidor Next.js
+  - Definir TTL apropriado (ex: 60 segundos para listagens)
+  - Implementar `Cache-Control`, `ETag`, `Last-Modified`
+
+- [ ] **Endpoint de Metadados:** Criar `/api/pets/{id}/meta` para Open Graph
+  - Retornar apenas título, descrição, imagem para meta tags
+  - Otimizado para SSR (resposta rápida)
+  - Facilitar compartilhamento em redes sociais
+
+- [ ] **CORS Aprimorado:** Configurar headers específicos para SSR
+  - Permitir `getServerSideProps` do Next.js
+  - Configurar `Access-Control-Max-Age` adequado
+
+- [ ] **Rate Limiting Diferenciado:** Limites diferentes para SSR vs CSR
+  - Rotas SSR (server-to-server): limites mais generosos
+  - Rotas CSR (client-to-server): limites mais restritivos
+  - Implementar via AspNetCoreRateLimit com IP whitelisting
+
+### Frontend (Futuro)
+
+Estrutura de renderização híbrida planejada com **Next.js 14+**:
+
+#### 🎨 Arquitetura de Renderização
+
+**SSR (Server-Side Rendering)** para:
+- 🏠 Páginas públicas (landing page, sobre)
+- 🔍 Listagem de pets (`/pets`, `/pets/cachorro`, `/pets/gato`)
+- 📄 Detalhes do pet (`/pets/{id}`)
+- 🌐 Blog/artigos (se implementado)
+
+**CSR (Client-Side Rendering)** para:
+- 🔐 Dashboard do usuário (após login)
+- 💬 Sistema de chat (SignalR)
+- ❤️ Gerenciamento de favoritos
+- 📝 Formulários de criação/edição de pets
+- 📊 Painel administrativo
+
+**Benefícios do Híbrido:**
+- ✅ SEO otimizado (Google indexa conteúdo dos pets)
+- ✅ Compartilhamento social com preview (Open Graph)
+- ✅ Performance (páginas públicas carregam instantaneamente)
+- ✅ Interatividade (dashboard tem atualizações em tempo real)
+- ✅ Melhor experiência mobile (menos JavaScript inicial)
+
+#### 🔗 Estrutura de URLs Híbrida
+
+**Rotas Principais (Path-based):**
+```
+/pets                          → Lista todos os pets (SSR)
+/pets/cachorro                 → Filtra por espécie (SSR)
+/pets/gato                     → Filtra por espécie (SSR)
+/pets/[id]                     → Detalhes do pet (SSR)
+/pets/[species]/[city]         → Combina espécie + localização (SSR)
+```
+
+**Filtros Secundários (Query String):**
+```
+/pets/cachorro?breed=labrador&age=young&size=large
+/pets/sao-paulo?species=gato&coat=curto&color=branco
+/pets?state=sp&city=campinas&posted=last-week
+```
+
+**Vantagens da Abordagem Híbrida:**
+- 🔍 **SEO:** URLs amigáveis para espécie e localização (principais filtros)
+- 🔗 **Compartilhamento:** Links curtos e descritivos (`/pets/cachorro/sao-paulo`)
+- 🎯 **Flexibilidade:** Filtros avançados via query string (sem poluir URL)
+- 📊 **Analytics:** Fácil rastreamento das principais categorias
+- 🚀 **Performance:** Next.js pré-renderiza rotas principais
+
+**Exemplo de Implementação Next.js:**
+```javascript
+// app/pets/[species]/[city]/page.tsx
+export async function generateMetadata({ params }) {
+  return {
+    title: `Adote um ${params.species} em ${params.city} - PetHub`,
+    description: `Encontre ${params.species}s para adoção em ${params.city}`,
+    openGraph: {
+      title: `${params.species} para adoção em ${params.city}`,
+      images: ['/og-image-pets.jpg'],
+    }
+  }
+}
+
+export default async function PetsPage({ params, searchParams }) {
+  // SSR: busca na API durante o build/request
+  const pets = await fetch(
+    `${API_URL}/api/pets/search?species=${params.species}&city=${params.city}&age=${searchParams.age || ''}`
+  )
+  
+  return <PetList pets={pets} />
+}
+```
+
+#### 📱 Stack Tecnológica Recomendada
+
+- **Framework:** Next.js 14+ (App Router)
+- **Estilo:** Tailwind CSS + shadcn/ui
+- **State:** Zustand (state client-side) + React Query (cache API)
+- **Realtime:** SignalR Client (@microsoft/signalr)
+- **Forms:** React Hook Form + Zod
+- **Auth:** NextAuth.js v5 (integração JWT)
 
 ## 🤝 Contribuindo
 
