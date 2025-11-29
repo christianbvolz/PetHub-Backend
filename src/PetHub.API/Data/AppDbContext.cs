@@ -23,6 +23,56 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         base.OnModelCreating(modelBuilder);
 
+        // --- Configure Guid columns to use utf8mb4 collation (MySQL/MariaDB compatible) ---
+        modelBuilder
+            .Entity<User>()
+            .Property(u => u.Id)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<Pet>()
+            .Property(p => p.UserId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<Conversation>()
+            .Property(c => c.UserAId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<Conversation>()
+            .Property(c => c.UserBId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<AdoptionRequest>()
+            .Property(a => a.AdopterId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<ChatMessage>()
+            .Property(cm => cm.SenderId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<PetFavorite>()
+            .Property(pf => pf.UserId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
         // --- Pet Relationships ---
         modelBuilder
             .Entity<Pet>()

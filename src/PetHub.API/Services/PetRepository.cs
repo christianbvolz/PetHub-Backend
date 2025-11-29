@@ -172,7 +172,7 @@ public class PetRepository(AppDbContext context) : IPetRepository
         };
     }
 
-    public async Task<Pet> CreateAsync(CreatePetDto dto, int userId)
+    public async Task<Pet> CreateAsync(CreatePetDto dto, Guid userId)
     {
         var pet = new Pet
         {

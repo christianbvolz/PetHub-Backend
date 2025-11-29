@@ -23,7 +23,7 @@ public class AdoptionRequest
     public Pet? Pet { get; set; }
 
     // Who wants to adopt?
-    public int AdopterId { get; set; }
+    public Guid AdopterId { get; set; }
 
     [JsonIgnore]
     public User? Adopter { get; set; }

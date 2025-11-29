@@ -101,7 +101,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
 
         // Owner relationship
         pet.Owner.Should().NotBeNull();
-        pet.Owner.Id.Should().BeGreaterThan(0);
+        pet.Owner.Id.Should().NotBe(Guid.Empty);
         pet.Owner.Name.Should().NotBeNullOrEmpty();
         pet.Owner.City.Should().NotBeNullOrEmpty();
         pet.Owner.State.Should().NotBeNullOrEmpty();
@@ -195,7 +195,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
 
         // Owner structure
         pet.Owner.Should().NotBeNull();
-        pet.Owner.Id.Should().BeGreaterThan(0);
+        pet.Owner.Id.Should().NotBe(Guid.Empty);
         pet.Owner.Name.Should().NotBeNullOrEmpty();
         pet.Owner.City.Should().NotBeNullOrEmpty();
         pet.Owner.State.Should().NotBeNullOrEmpty();

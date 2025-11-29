@@ -257,11 +257,16 @@ public static class DbSeeder
         await context.SaveChangesAsync();
 
         // --- SEED USERS ---
+        // Using UUID v7 for user IDs (ordered by creation time, secure against enumeration)
+        var user1Id = UuidHelper.NewId();
+        var user2Id = UuidHelper.NewId();
+        var user3Id = UuidHelper.NewId();
+
         var users = new List<User>
         {
             new()
             {
-                Id = 1,
+                Id = user1Id,
                 Name = "christian volz",
                 Email = "christianbvolz@gmail.com",
                 PasswordHash = PasswordHelper.HashPassword("qwerty"),
@@ -275,7 +280,7 @@ public static class DbSeeder
             },
             new()
             {
-                Id = 2,
+                Id = user2Id,
                 Name = "João Santos",
                 Email = "joao.santos@email.com",
                 PasswordHash = PasswordHelper.HashPassword("senha123"),
@@ -289,7 +294,7 @@ public static class DbSeeder
             },
             new()
             {
-                Id = 3,
+                Id = user3Id,
                 Name = "Ana Costa",
                 Email = "ana.costa@email.com",
                 PasswordHash = PasswordHelper.HashPassword("senha123"),
@@ -337,9 +342,11 @@ public static class DbSeeder
             "Oliver",
         };
 
+        var userIds = new[] { user1Id, user2Id, user3Id };
+
         for (var i = 1; i <= 50; i++)
         {
-            var userId = ((i - 1) % 3) + 1; // Distribute pets among 3 users
+            var userId = userIds[(i - 1) % 3]; // Distribute pets among 3 users
             var speciesId = random.Next(1, 3); // Only Dogs and Cats for simplicity
             var breedId =
                 speciesId == 1

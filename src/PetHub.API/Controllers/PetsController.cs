@@ -8,7 +8,8 @@ namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PetsController(IPetRepository petRepository) : ControllerBase
+public class PetsController(IPetRepository petRepository, IUserRepository userRepository)
+    : ControllerBase
 {
     // GET: api/pets/{id}
     [HttpGet("{id}")]
@@ -50,8 +51,15 @@ public class PetsController(IPetRepository petRepository) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PetResponseDto>> CreatePet(CreatePetDto dto)
     {
-        // TODO: Get UserId from authenticated user (for now, use hardcoded value)
-        const int userId = 1;
+        // TODO: Get UserId from authenticated user (for now, use first available user)
+        // This is a temporary workaround for testing - replace with actual auth in production
+        var users = await userRepository.GetAllAsync();
+        var firstUser = users.FirstOrDefault();
+        if (firstUser == null)
+        {
+            return BadRequest("No users found in the system. Please create a user first.");
+        }
+        var userId = firstUser.Id;
 
         // Validate Species exists
         if (!await petRepository.ValidateSpeciesExistsAsync(dto.SpeciesId))

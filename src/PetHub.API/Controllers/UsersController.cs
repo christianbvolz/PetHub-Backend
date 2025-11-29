@@ -18,10 +18,10 @@ public class UsersController(IUserRepository userRepository) : ControllerBase
         return users.Select(u => u.ToResponseDto()).ToList();
     }
 
-    // GET: api/users/5
-    // Retrieves a specific user by ID
-    [HttpGet("{id}")]
-    public async Task<ActionResult<UserResponseDto>> GetUser(int id)
+    // GET: api/users/{id}
+    // Retrieves a specific user by ID (UUID v7)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<UserResponseDto>> GetUser(Guid id)
     {
         var user = await userRepository.GetByIdAsync(id);
 
@@ -51,8 +51,8 @@ public class UsersController(IUserRepository userRepository) : ControllerBase
 
     // PATCH: api/users/{id}
     // Universally updates user. Supports partial updates.
-    [HttpPatch("{id}")]
-    public async Task<IActionResult> PatchUser(int id, PatchUserDto dto)
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> PatchUser(Guid id, PatchUserDto dto)
     {
         try
         {
