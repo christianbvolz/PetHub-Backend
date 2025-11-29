@@ -20,5 +20,5 @@ public class ChatMessage
     public Conversation? Conversation { get; set; }
 
     // Who sent this specific message?
-    public int SenderId { get; set; }
+    public Guid SenderId { get; set; }
 }

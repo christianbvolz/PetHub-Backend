@@ -447,7 +447,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
         var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.Owner.Should().NotBeNull();
-        createdPet.Owner.Id.Should().Be(1); // Hardcoded userId in controller
+        createdPet.Owner.Id.Should().NotBe(Guid.Empty); // UUID v7 from controller
         createdPet.Owner.Name.Should().NotBeNullOrEmpty();
     }
 
@@ -561,7 +561,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Verify all relationships are loaded
         createdPet!.Owner.Should().NotBeNull();
-        createdPet.Owner.Id.Should().BeGreaterThan(0);
+        createdPet.Owner.Id.Should().NotBe(Guid.Empty);
 
         createdPet.SpeciesName.Should().NotBeNullOrEmpty();
         createdPet.BreedName.Should().NotBeNullOrEmpty();

@@ -13,7 +13,7 @@ public class UserRepository(AppDbContext context) : IUserRepository
         return await context.Users.ToListAsync();
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public async Task<User?> GetByIdAsync(Guid id)
     {
         return await context.Users.FindAsync(id);
     }
@@ -33,6 +33,7 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
         var user = new User
         {
+            Id = UuidHelper.NewId(),
             Name = dto.Name,
             Email = dto.Email,
             PasswordHash = PasswordHelper.HashPassword(dto.Password),
@@ -52,7 +53,7 @@ public class UserRepository(AppDbContext context) : IUserRepository
         return user;
     }
 
-    public async Task<bool> UpdateAsync(int id, PatchUserDto dto)
+    public async Task<bool> UpdateAsync(Guid id, PatchUserDto dto)
     {
         var user = await GetByIdAsync(id);
         if (user == null)
@@ -105,7 +106,7 @@ public class UserRepository(AppDbContext context) : IUserRepository
         return true;
     }
 
-    public async Task<bool> EmailExistsAsync(string email, int? excludeUserId = null)
+    public async Task<bool> EmailExistsAsync(string email, Guid? excludeUserId = null)
     {
         if (excludeUserId.HasValue)
         {

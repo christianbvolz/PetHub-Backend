@@ -1,6 +1,7 @@
 using PetHub.API.Data;
 using PetHub.API.Enums;
 using PetHub.API.Models;
+using PetHub.API.Utils;
 
 namespace PetHub.Tests.IntegrationTests;
 
@@ -19,9 +20,10 @@ public static class TestDataSeeder
         context.Tags.RemoveRange(context.Tags);
         await context.SaveChangesAsync();
 
-        // Create test user
+        // Create test user with UUID v7
         var testUser = new User
         {
+            Id = UuidHelper.NewId(),
             Name = "Test User",
             Email = "test@pethub.com",
             PasswordHash = "hashedpassword",

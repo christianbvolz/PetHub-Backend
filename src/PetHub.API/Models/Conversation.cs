@@ -8,13 +8,13 @@ public class Conversation
     public int Id { get; set; }
 
     // Participant 1 (e.g., The Adopter)
-    public int UserAId { get; set; }
+    public Guid UserAId { get; set; }
 
     [JsonIgnore]
     public User? UserA { get; set; }
 
     // Participant 2 (e.g., The Pet Owner)
-    public int UserBId { get; set; }
+    public Guid UserBId { get; set; }
 
     [JsonIgnore]
     public User? UserB { get; set; }
