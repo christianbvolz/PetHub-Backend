@@ -3,7 +3,7 @@ using PetHub.API.Enums;
 using PetHub.API.Models;
 using PetHub.API.Utils;
 
-namespace PetHub.Tests.IntegrationTests;
+namespace PetHub.Tests.IntegrationTests.Helpers;
 
 /// <summary>
 /// Helper class to seed test data for integration tests
@@ -26,7 +26,7 @@ public static class TestDataSeeder
             Id = UuidHelper.NewId(),
             Name = "Test User",
             Email = "test@pethub.com",
-            PasswordHash = "hashedpassword",
+            PasswordHash = PasswordHelper.HashPassword("testpassword"),
             PhoneNumber = "11999999999",
             ZipCode = "01000000",
             State = "SP",

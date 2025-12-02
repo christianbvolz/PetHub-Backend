@@ -117,4 +117,19 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
         return await context.Users.AnyAsync(u => u.Email == email);
     }
+
+    public async Task<User?> AuthenticateAsync(string email, string password)
+    {
+        var user = await GetByEmailAsync(email);
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        // Verify password using BCrypt
+        bool passwordValid = PasswordHelper.VerifyPassword(password, user.PasswordHash);
+
+        return passwordValid ? user : null;
+    }
 }

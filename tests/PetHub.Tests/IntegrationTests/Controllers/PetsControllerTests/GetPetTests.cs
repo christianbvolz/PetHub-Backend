@@ -5,8 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
+using PetHub.Tests.IntegrationTests.Helpers;
+using PetHub.Tests.IntegrationTests.Infrastructure;
 
-namespace PetHub.Tests.IntegrationTests;
+namespace PetHub.Tests.IntegrationTests.Controllers.PetsControllerTests;
 
 /// <summary>
 /// Integration tests for the GetPet endpoint
@@ -69,7 +71,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var pet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
         pet!.Id.Should().Be(_existingPetId);
         pet.Name.Should().NotBeNullOrEmpty();
@@ -87,7 +89,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var pet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
 
         // Check all required relationships are loaded
@@ -175,7 +177,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var pet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
 
         // Verify response structure
@@ -221,7 +223,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var pet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
         pet!.Tags.Should().NotBeNullOrEmpty();
         pet.Tags.Should().Contain(t => t.Name == "Marrom");
@@ -246,7 +248,7 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var pet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
         pet!.Name.Should().Be("Adopted Pet");
         pet.IsAdopted.Should().BeTrue();
@@ -260,10 +262,10 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
 
         // Act
         var response1 = await _client.GetAsync(requestUri);
-        var pet1 = await response1.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet1 = await response1.ReadApiResponseDataAsync<PetResponseDto>();
 
         var response2 = await _client.GetAsync(requestUri);
-        var pet2 = await response2.Content.ReadFromJsonAsync<PetResponseDto>();
+        var pet2 = await response2.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Assert
         response1.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -1,4 +1,8 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PetHub.API.Common;
+using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
 using PetHub.API.Mappings;
 using PetHub.API.Services;
@@ -7,67 +11,64 @@ namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController(IUserRepository userRepository) : ControllerBase
+[Authorize]
+public class UsersController(IUserRepository userRepository) : ApiControllerBase
 {
-    // GET: api/users
-    // Retrieves all registered users
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers()
+    // GET: api/users/me
+    // Retrieves the authenticated user's profile
+    [HttpGet("me")]
+    public async Task<ActionResult<ApiResponse<UserResponseDto>>> GetCurrentUser()
     {
-        var users = await userRepository.GetAllAsync();
-        return users.Select(u => u.ToResponseDto()).ToList();
-    }
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized("Invalid or missing user ID in token.");
+        }
 
-    // GET: api/users/{id}
-    // Retrieves a specific user by ID (UUID v7)
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<UserResponseDto>> GetUser(Guid id)
-    {
-        var user = await userRepository.GetByIdAsync(id);
+        var user = await userRepository.GetByIdAsync(userId);
 
         if (user == null)
         {
-            return NotFound($"User with ID {id} not found.");
+            return NotFound("User not found.");
         }
 
-        return user.ToResponseDto();
+        return Success(user.ToResponseDto());
     }
 
-    // POST: api/users
-    // Creates a new user
-    [HttpPost]
-    public async Task<ActionResult<UserResponseDto>> CreateUser(CreateUserDto dto)
+    // PATCH: api/users/me
+    // Updates the authenticated user's profile. Supports partial updates.
+    // If email or password is changed, the user must re-authenticate.
+    [HttpPatch("me")]
+    public async Task<ActionResult<ApiResponse<object>>> PatchCurrentUser(PatchUserDto dto)
     {
-        try
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            var user = await userRepository.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user.ToResponseDto());
+            return Unauthorized("Invalid or missing user ID in token.");
         }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
 
-    // PATCH: api/users/{id}
-    // Universally updates user. Supports partial updates.
-    [HttpPatch("{id:guid}")]
-    public async Task<IActionResult> PatchUser(Guid id, PatchUserDto dto)
-    {
+        // Check if email or password is being changed (requires re-authentication)
+        bool requiresReauth =
+            !string.IsNullOrEmpty(dto.Email) || !string.IsNullOrEmpty(dto.Password);
+
         try
         {
-            var success = await userRepository.UpdateAsync(id, dto);
+            var success = await userRepository.UpdateAsync(userId, dto);
 
             if (!success)
             {
-                return NotFound($"User with ID {id} not found.");
+                return NotFound("User not found.");
             }
 
-            return Ok("User updated successfully.");
+            var message = requiresReauth
+                ? "User updated successfully. Please login again with your new credentials."
+                : "User updated successfully.";
+
+            return Success(new { requiresReauth }, message);
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return Error(ex.Message);
         }
     }
 }

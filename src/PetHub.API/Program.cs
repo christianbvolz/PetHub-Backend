@@ -1,5 +1,8 @@
+using System.Text;
 using DotNetEnv;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PetHub.API.Data;
 using PetHub.API.Hubs;
 using PetHub.API.Middlewares;
@@ -33,11 +36,12 @@ var frontendUrl =
     Environment.GetEnvironmentVariable("FRONTEND_URL")
     ?? "http://localhost:3000;http://localhost:5173";
 
-// JWT Secret (For future Authentication)
+// JWT Secret (REQUIRED - must be set in environment variable or .env file)
 var jwtSecret =
     Environment.GetEnvironmentVariable("JWT_SECRET")
-    ?? builder.Configuration["JwtSettings:Secret"]
-    ?? "pethub_secret_key_default_local_dev_12345";
+    ?? throw new InvalidOperationException(
+        "JWT_SECRET environment variable is not set. Please configure it in your .env file or environment variables."
+    );
 
 // ==================================================================
 // 2. SERVICE REGISTRATION (Dependency Injection)
@@ -72,9 +76,60 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// JWT Configuration (Options Pattern)
+builder
+    .Services.AddOptions<PetHub.API.Configuration.JwtSettings>()
+    .Bind(builder.Configuration.GetSection(PetHub.API.Configuration.JwtSettings.SectionName))
+    .Configure(options =>
+    {
+        // Override SecretKey from environment variable (required for security)
+        options.SecretKey = jwtSecret;
+    })
+    .ValidateDataAnnotations() // Validates [Required], [Range], etc.
+    .ValidateOnStart(); // Fails fast on startup if configuration is invalid
+
+// JWT Authentication
+builder
+    .Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+        var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            // ClockSkew uses the default value of 5 minutes. It is not currently configurable.
+        };
+
+        // Better error messages for development
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                {
+                    context.Response.Headers.Append("Token-Expired", "true");
+                }
+                return Task.CompletedTask;
+            },
+        };
+    });
+
 // Custom Services (Repositories, etc.)
 builder.Services.AddScoped<IPetRepository, PetRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IJwtService, JwtService>(); // Singleton: stateless service, thread-safe
 
 // ==================================================================
 // 3. MIDDLEWARE PIPELINE
@@ -97,9 +152,11 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // --------------------------------
 
-// Apply CORS Policy (Must be before Authorization)
+// Apply CORS Policy (Must be before Authentication/Authorization)
 app.UseCors("AllowFrontend");
 
+// Enable Authentication & Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Map API Endpoints

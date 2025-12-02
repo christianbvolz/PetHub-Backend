@@ -7,8 +7,10 @@ using PetHub.API.Data;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
+using PetHub.Tests.IntegrationTests.Helpers;
+using PetHub.Tests.IntegrationTests.Infrastructure;
 
-namespace PetHub.Tests.IntegrationTests;
+namespace PetHub.Tests.IntegrationTests.Controllers.PetsControllerTests;
 
 /// <summary>
 /// Integration tests for the SearchPets endpoint
@@ -53,7 +55,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(5); // 5 available pets (excluding adopted)
@@ -77,7 +79,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(2);
         result.TotalCount.Should().Be(5);
@@ -99,7 +101,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Rex, Max and Bella (dogs only)
@@ -119,7 +121,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Luna, Mia and Bella (females only)
@@ -139,7 +141,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(1); // Only Rex
@@ -159,7 +161,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(2); // Rex and Bella
@@ -179,7 +181,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Luna, Mia and Bella (white pets)
@@ -199,7 +201,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(1); // Only Bella (has both white AND black)
@@ -221,7 +223,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(2); // Max and Mia (long coat)
@@ -241,7 +243,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(1); // Only Rex (large dog)
@@ -261,7 +263,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().BeEmpty();
         result.TotalCount.Should().Be(0);
@@ -280,7 +282,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().BeEmpty();
         result.Page.Should().Be(999);
@@ -298,7 +300,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(1);
 
@@ -327,7 +329,7 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<PagedResult<PetResponseDto>>();
+        var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
         result!.Items.Should().NotContain(p => p.Name == "Adopted Pet");
         result.Items.Should().OnlyContain(p => !p.IsAdopted);

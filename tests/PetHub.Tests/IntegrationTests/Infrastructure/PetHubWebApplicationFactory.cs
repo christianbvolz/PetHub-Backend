@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 
-namespace PetHub.Tests.IntegrationTests;
+namespace PetHub.Tests.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Custom WebApplicationFactory for integration tests
@@ -22,6 +22,12 @@ public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Set JWT secret for testing
+        Environment.SetEnvironmentVariable(
+            "JWT_SECRET",
+            "test_jwt_secret_key_for_integration_tests_1234567890_abcdef"
+        );
+
         builder.ConfigureServices(services =>
         {
             // Remove the real database context

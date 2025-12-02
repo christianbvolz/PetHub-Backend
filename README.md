@@ -58,11 +58,24 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
 - Suporte a múltiplas tags por pet
 - Filtros AND/OR configuráveis
 
-### 👤 Gestão de Utilizadores (Users)
-- Registro seguro com hash BCrypt
-- Endereço completo para filtros de proximidade
-- Validação de dados (email duplicado, formatos)
-- DTOs para segurança e validação
+### 👤 Gestão de Utilizadores & Autenticação
+
+#### ✅ **Autenticação JWT (POST /api/auth/register & /api/auth/login)**
+- Registro seguro com hash BCrypt (12 rounds)
+- Login com validação de credenciais
+- Geração de tokens JWT (Bearer authentication)
+- Tokens com expiração configurável (padrão: 60 minutos)
+- Claims customizados: userId, email, sub, jti
+- UUID v7 para IDs de usuário (segurança contra enumeração)
+- **Options Pattern** para configuração fortemente tipada
+- **Validação on Startup** com Data Annotations
+- Clock Skew configurado (tolerância de 5 minutos)
+
+#### ✅ **Autorização**
+- Endpoints protegidos com `[Authorize]`
+- Extração automática do UserId do token JWT
+- POST /api/pets requer autenticação
+- Middleware de autenticação configurado globalmente
 
 ### 💬 Comunicação & Adoção (Estrutura Base)
 - **Chat em Tempo Real:** SignalR configurado
@@ -75,7 +88,7 @@ O projeto possui uma suite completa de **43 testes de integração** com 100% de
 
 - **GetPet:** 11 testes (validação de ID, relacionamentos, erros)
 - **SearchPets:** 14 testes (filtros, paginação, ordenação)
-- **CreatePet:** 18 testes (validações, relacionamentos, autenticação)
+- **CreatePet:** 18 testes (validações, relacionamentos, **autenticação JWT**, autorização)
 
 ```bash
 # Executar todos os testes
@@ -203,29 +216,34 @@ dotnet test --collect:"XPlat Code Coverage"
 PetHub-Backend/
 ├── src/
 │   └── PetHub.API/              # Projeto principal da API
-│       ├── Controllers/          # Endpoints HTTP (PetsController, UsersController)
+│       ├── Controllers/          # Endpoints HTTP (AuthController, PetsController, UsersController)
 │       ├── Models/               # Entidades do banco (Pet, User, Species, etc)
 │       ├── DTOs/                 # Data Transfer Objects
 │       │   ├── Pet/              # CreatePetDto, PetResponseDto, SearchPetsQuery
-│       │   ├── User/             # UserResponseDto, CreateUserDto
+│       │   ├── User/             # LoginDto, LoginResponseDto, UserResponseDto, CreateUserDto
 │       │   └── Common/           # PagedResult<T>
 │       ├── Services/             # Lógica de negócio
-│       │   ├── IPetRepository.cs # Interface do repositório
-│       │   └── PetRepository.cs  # Implementação com EF Core
+│       │   ├── IPetRepository.cs # Interface do repositório de Pets
+│       │   ├── PetRepository.cs  # Implementação com EF Core
+│       │   ├── IUserRepository.cs # Interface do repositório de Users
+│       │   ├── UserRepository.cs  # Implementação com autenticação
+│       │   ├── IJwtService.cs     # Interface do serviço JWT
+│       │   └── JwtService.cs      # Geração e validação de tokens JWT
 │       ├── Mappings/             # Extension methods para mapear entidades → DTOs
 │       ├── Data/                 # Contexto EF Core + Migrations + Seeding
 │       ├── Enums/                # PetGender, PetSize, TagCategory, etc
 │       ├── Hubs/                 # SignalR hubs (Chat em tempo real)
 │       ├── Middlewares/          # GlobalExceptionMiddleware
-│       ├── Utils/                # PasswordHelper (BCrypt)
-│       └── Program.cs            # Entry point + configuração
+│       ├── Utils/                # PasswordHelper (BCrypt), UuidHelper (UUID v7)
+│       └── Program.cs            # Entry point + configuração + JWT auth
 │
 ├── tests/
 │   └── PetHub.Tests/            # Testes de integração (xUnit)
 │       └── IntegrationTests/
 │           ├── GetPetIntegrationTests.cs        # 11 testes
 │           ├── SearchPetsIntegrationTests.cs    # 14 testes
-│           ├── CreatePetIntegrationTests.cs     # 18 testes
+│           ├── CreatePetIntegrationTests.cs     # 18 testes (com autenticação)
+│           ├── AuthenticationHelper.cs          # Helper para JWT nos testes
 │           ├── TestDataSeeder.cs                # Dados de teste
 │           └── PetHubWebApplicationFactory.cs   # Factory para testes
 │
@@ -316,14 +334,21 @@ ASPNETCORE_ENVIRONMENT=Production
 | `PUT` | `/api/pets/{id}` | Atualizar pet | 🚧 Planejado |
 | `DELETE` | `/api/pets/{id}` | Remover pet | 🚧 Planejado |
 
+### 🔐 Autenticação
+
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| `POST` | `/api/auth/register` | Registrar novo usuário | ✅ Implementado |
+| `POST` | `/api/auth/login` | Login JWT | ✅ Implementado |
+
 ### 👤 Usuários
 
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| `POST` | `/api/users/register` | Registrar novo usuário | 🚧 Planejado |
-| `POST` | `/api/users/login` | Login JWT | 🚧 Planejado |
-| `GET` | `/api/users/{id}` | Perfil do usuário | 🚧 Planejado |
-| `PUT` | `/api/users/{id}` | Atualizar perfil | 🚧 Planejado |
+| `GET` | `/api/users` | Listar usuários | 🚧 Planejado |
+| `GET` | `/api/users/{id}` | Perfil do usuário | ✅ Implementado |
+| `PATCH` | `/api/users/{id}` | Atualizar perfil (parcial) | ✅ Implementado |
+| `DELETE` | `/api/users/{id}` | Remover usuário | 🚧 Planejado |
 
 ### 💬 Chat & Adoção
 
@@ -336,8 +361,10 @@ ASPNETCORE_ENVIRONMENT=Production
 
 ### Backend (API)
 
-- [ ] Implementar autenticação JWT
-- [ ] Adicionar endpoints de CRUD completo para Users
+- [x] **Implementar autenticação JWT** ✅
+- [x] **Adicionar repository pattern para Users** ✅
+- [x] **Proteger endpoints com [Authorize]** ✅
+- [ ] Adicionar refresh tokens para JWT
 - [ ] Implementar sistema de favoritos
 - [ ] Completar fluxo de pedidos de adoção
 - [ ] Adicionar upload de imagens real (S3/Cloudinary)

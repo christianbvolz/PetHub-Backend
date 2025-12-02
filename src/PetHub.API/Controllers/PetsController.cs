@@ -1,4 +1,7 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PetHub.API.Common;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Mappings;
@@ -8,12 +11,11 @@ namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PetsController(IPetRepository petRepository, IUserRepository userRepository)
-    : ControllerBase
+public class PetsController(IPetRepository petRepository) : ApiControllerBase
 {
     // GET: api/pets/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<PetResponseDto>> GetPet(int id)
+    public async Task<ActionResult<ApiResponse<PetResponseDto>>> GetPet(int id)
     {
         var pet = await petRepository.GetByIdAsync(id);
 
@@ -22,12 +24,12 @@ public class PetsController(IPetRepository petRepository, IUserRepository userRe
             return NotFound($"Pet with ID {id} not found.");
         }
 
-        return Ok(pet.ToResponseDto());
+        return Success(pet.ToResponseDto());
     }
 
     // GET: api/pets/search?page=1&pageSize=10
     [HttpGet("search")]
-    public async Task<ActionResult<PagedResult<PetResponseDto>>> SearchPets(
+    public async Task<ActionResult<ApiResponse<PagedResult<PetResponseDto>>>> SearchPets(
         [FromQuery] SearchPetsQuery query
     )
     {
@@ -44,33 +46,31 @@ public class PetsController(IPetRepository petRepository, IUserRepository userRe
             HasNextPage = pagedPets.HasNextPage,
         };
 
-        return Ok(result);
+        return Success(result);
     }
 
     // POST: api/pets
     [HttpPost]
-    public async Task<ActionResult<PetResponseDto>> CreatePet(CreatePetDto dto)
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<PetResponseDto>>> CreatePet(CreatePetDto dto)
     {
-        // TODO: Get UserId from authenticated user (for now, use first available user)
-        // This is a temporary workaround for testing - replace with actual auth in production
-        var users = await userRepository.GetAllAsync();
-        var firstUser = users.FirstOrDefault();
-        if (firstUser == null)
+        // Extract UserId from JWT token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            return BadRequest("No users found in the system. Please create a user first.");
+            return Unauthorized("Invalid or missing user ID in token.");
         }
-        var userId = firstUser.Id;
 
         // Validate Species exists
         if (!await petRepository.ValidateSpeciesExistsAsync(dto.SpeciesId))
         {
-            return BadRequest($"Species with ID {dto.SpeciesId} not found.");
+            return Error($"Species with ID {dto.SpeciesId} not found.");
         }
 
         // Validate Breed exists and belongs to the Species
         if (!await petRepository.ValidateBreedBelongsToSpeciesAsync(dto.BreedId, dto.SpeciesId))
         {
-            return BadRequest(
+            return Error(
                 $"Breed with ID {dto.BreedId} not found or doesn't belong to the specified species."
             );
         }
@@ -79,7 +79,7 @@ public class PetsController(IPetRepository petRepository, IUserRepository userRe
         var invalidTagIds = await petRepository.ValidateTagsExistAsync(dto.TagIds);
         if (invalidTagIds.Count > 0)
         {
-            return BadRequest($"Invalid tag IDs: {string.Join(", ", invalidTagIds)}");
+            return Error($"Invalid tag IDs: {string.Join(", ", invalidTagIds)}");
         }
 
         // Create Pet

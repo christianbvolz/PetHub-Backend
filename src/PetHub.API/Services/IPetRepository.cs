@@ -6,10 +6,10 @@ namespace PetHub.API.Services;
 
 public interface IPetRepository
 {
-    public Task<Pet?> GetByIdAsync(int id);
-    public Task<PagedResult<Pet>> SearchAsync(SearchPetsQuery query);
-    public Task<Pet> CreateAsync(CreatePetDto dto, Guid userId);
-    public Task<bool> ValidateSpeciesExistsAsync(int speciesId);
-    public Task<bool> ValidateBreedBelongsToSpeciesAsync(int breedId, int speciesId);
-    public Task<List<int>> ValidateTagsExistAsync(List<int> tagIds);
+    Task<Pet?> GetByIdAsync(int id);
+    Task<PagedResult<Pet>> SearchAsync(SearchPetsQuery query);
+    Task<Pet> CreateAsync(CreatePetDto dto, Guid userId);
+    Task<bool> ValidateSpeciesExistsAsync(int speciesId);
+    Task<bool> ValidateBreedBelongsToSpeciesAsync(int breedId, int speciesId);
+    Task<List<int>> ValidateTagsExistAsync(List<int> tagIds);
 }

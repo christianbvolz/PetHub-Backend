@@ -3,10 +3,13 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
+using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
+using PetHub.Tests.IntegrationTests.Helpers;
+using PetHub.Tests.IntegrationTests.Infrastructure;
 
-namespace PetHub.Tests.IntegrationTests;
+namespace PetHub.Tests.IntegrationTests.Controllers.PetsControllerTests;
 
 /// <summary>
 /// Integration tests for the CreatePet endpoint
@@ -20,6 +23,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
     private int _validBreedId;
     private int _validTagId1;
     private int _validTagId2;
+    private string _authToken = string.Empty;
 
     public CreatePetIntegrationTests(PetHubWebApplicationFactory factory)
     {
@@ -41,10 +45,25 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
         var breed = dbContext.Breeds.FirstOrDefault(b => b.SpeciesId == species!.Id);
         var tags = dbContext.Tags.Take(2).ToList();
 
+        if (tags.Count < 2)
+        {
+            throw new InvalidOperationException(
+                $"Test setup requires at least 2 tags in the database, but found {tags.Count}. "
+                    + "Ensure TestDataSeeder is seeding data correctly."
+            );
+        }
+
         _validSpeciesId = species?.Id ?? 0;
         _validBreedId = breed?.Id ?? 0;
-        _validTagId1 = tags[0]?.Id ?? 0;
-        _validTagId2 = tags[1]?.Id ?? 0;
+        _validTagId1 = tags[0].Id;
+        _validTagId2 = tags[1].Id;
+
+        // Register a test user and get authentication token
+        _authToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
+            _client,
+            "createpettest@example.com"
+        );
+        _client.AddAuthToken(_authToken);
     }
 
     public Task DisposeAsync()
@@ -103,7 +122,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.Id.Should().BeGreaterThan(0);
         createdPet.Name.Should().Be(createDto.Name);
@@ -162,12 +181,12 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
         var createResponse = await _client.PostAsJsonAsync("/api/pets", createDto);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var createdPet = await createResponse.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await createResponse.ReadApiResponseDataAsync<PetResponseDto>();
         var getResponse = await _client.GetAsync($"/api/pets/{createdPet!.Id}");
 
         // Assert
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var retrievedPet = await getResponse.Content.ReadFromJsonAsync<PetResponseDto>();
+        var retrievedPet = await getResponse.ReadApiResponseDataAsync<PetResponseDto>();
         retrievedPet.Should().NotBeNull();
         retrievedPet!.Id.Should().Be(createdPet.Id);
         retrievedPet.Name.Should().Be(createDto.Name);
@@ -193,9 +212,10 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("Species");
-        content.Should().Contain("not found");
+        var apiResponse = await response.ReadApiResponseAsync<object>();
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeFalse();
+        apiResponse.Errors.Should().Contain(e => e.Contains("Species") && e.Contains("not found"));
     }
 
     [Fact]
@@ -218,9 +238,10 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("Breed");
-        content.Should().Contain("not found");
+        var apiResponse = await response.ReadApiResponseAsync<object>();
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeFalse();
+        apiResponse.Errors.Should().Contain(e => e.Contains("Breed") && e.Contains("not found"));
     }
 
     [Fact]
@@ -251,9 +272,12 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("Breed");
-        content.Should().Contain("doesn't belong to the specified species");
+        var apiResponse = await response.ReadApiResponseAsync<object>();
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeFalse();
+        apiResponse
+            .Errors.Should()
+            .Contain(e => e.Contains("Breed") && e.Contains("doesn't belong"));
     }
 
     [Fact]
@@ -277,9 +301,10 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("Invalid tag IDs");
-        content.Should().Contain("99999");
+        var apiResponse = await response.ReadApiResponseAsync<object>();
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeFalse();
+        apiResponse.Errors.Should().Contain(e => e.Contains("tag") && e.Contains("99999"));
     }
 
     [Fact]
@@ -302,7 +327,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.Name.Should().BeNullOrEmpty();
     }
@@ -333,7 +358,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.ImageUrls.Should().HaveCount(3);
         createdPet.ImageUrls.Should().Contain("https://example.com/pet10-1.jpg");
@@ -366,7 +391,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.Tags.Should().HaveCount(allTagIds.Count);
     }
@@ -392,7 +417,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.Tags.Should().BeEmpty();
     }
@@ -417,17 +442,15 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.IsAdopted.Should().BeFalse();
     }
 
     [Fact]
-    public async Task CreatePet_AssignsToHardcodedUser()
+    public async Task CreatePet_AssignsToAuthenticatedUser()
     {
         // Arrange
-        // TODO: This test will need to be updated when authentication is implemented
-        // Currently, the controller uses a hardcoded userId = 1
         var createDto = new CreatePetDto
         {
             Name = "User Assignment Test",
@@ -444,39 +467,11 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.Owner.Should().NotBeNull();
-        createdPet.Owner.Id.Should().NotBe(Guid.Empty); // UUID v7 from controller
-        createdPet.Owner.Name.Should().NotBeNullOrEmpty();
-    }
-
-    [Fact]
-    public async Task CreatePet_WithoutAuthentication_StillSucceeds()
-    {
-        // Arrange
-        // TODO: This test validates current behavior (no authentication required)
-        // When authentication is implemented, this test should be updated to expect 401 Unauthorized
-        var createDto = new CreatePetDto
-        {
-            Name = "No Auth Pet",
-            SpeciesId = _validSpeciesId,
-            BreedId = _validBreedId,
-            Gender = PetGender.Male,
-            Size = PetSize.Medium,
-            AgeInMonths = 24,
-            ImageUrls = new List<string> { "https://example.com/pet15.jpg" },
-        };
-
-        // Act - No authentication headers
-        var response = await _client.PostAsJsonAsync("/api/pets", createDto);
-
-        // Assert
-        // Currently succeeds because authentication is not implemented
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        // FUTURE: When authentication is implemented, expect:
-        // response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        createdPet.Owner.Id.Should().NotBe(Guid.Empty);
+        createdPet.Owner.Email.Should().Be("createpettest@example.com"); // The authenticated user
     }
 
     [Fact]
@@ -501,7 +496,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.CreatedAt.Should().BeAfter(beforeCreation);
         createdPet.CreatedAt.Should().BeBefore(afterCreation);
@@ -527,7 +522,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.AgeInMonths.Should().Be(0);
     }
@@ -556,7 +551,7 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var createdPet = await response.Content.ReadFromJsonAsync<PetResponseDto>();
+        var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
 
         // Verify all relationships are loaded
@@ -572,5 +567,30 @@ public class CreatePetIntegrationTests : IClassFixture<PetHubWebApplicationFacto
         createdPet.Tags.Should().NotBeEmpty();
         createdPet.Tags.Should().HaveCount(2);
         createdPet.Tags.Should().OnlyContain(t => !string.IsNullOrEmpty(t.Name));
+    }
+
+    [Fact]
+    public async Task CreatePet_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        var clientWithoutAuth = _factory.CreateClient(); // New client without token
+        var createDto = new CreatePetDto
+        {
+            Name = "Unauthorized Test",
+            SpeciesId = _validSpeciesId,
+            BreedId = _validBreedId,
+            Gender = PetGender.Male,
+            Size = PetSize.Medium,
+            AgeInMonths = 12,
+            Description = "Should fail without auth",
+            ImageUrls = new List<string> { "https://example.com/test.jpg" },
+            TagIds = new List<int> { _validTagId1 },
+        };
+
+        // Act
+        var response = await clientWithoutAuth.PostAsJsonAsync("/api/pets", createDto);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
