@@ -14,9 +14,17 @@ namespace PetHub.API.Controllers;
 [Authorize]
 public class UsersController(IUserRepository userRepository) : ApiControllerBase
 {
-    // GET: api/users/me
-    // Retrieves the authenticated user's profile
+    /// <summary>
+    /// Retrieves the authenticated user's profile
+    /// </summary>
+    /// <returns>Authenticated user profile data</returns>
+    /// <response code="200">Profile found successfully</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    /// <response code="404">User not found</response>
     [HttpGet("me")]
+    [ProducesResponseType(typeof(ApiResponse<UserResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserResponseDto>>> GetCurrentUser()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -35,10 +43,23 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
         return Success(user.ToResponseDto());
     }
 
-    // PATCH: api/users/me
-    // Updates the authenticated user's profile. Supports partial updates.
-    // If email or password is changed, the user must re-authenticate.
+    /// <summary>
+    /// Updates the authenticated user's profile (partial update)
+    /// </summary>
+    /// <param name="dto">Data to be updated. Supports partial update of name, email, password, phone, address and profile picture</param>
+    /// <returns>Indicates if the update was successful and if re-authentication is required</returns>
+    /// <response code="200">Profile updated successfully</response>
+    /// <response code="400">Invalid data (email already registered)</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    /// <response code="404">User not found</response>
+    /// <remarks>
+    /// If email or password are changed, the user must login again.
+    /// </remarks>
     [HttpPatch("me")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> PatchCurrentUser(PatchUserDto dto)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

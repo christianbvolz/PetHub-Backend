@@ -13,8 +13,16 @@ namespace PetHub.API.Controllers;
 [Route("api/[controller]")]
 public class PetsController(IPetRepository petRepository) : ApiControllerBase
 {
-    // GET: api/pets/{id}
+    /// <summary>
+    /// Retrieves a specific pet by ID
+    /// </summary>
+    /// <param name="id">Pet ID</param>
+    /// <returns>Pet data</returns>
+    /// <response code="200">Pet found successfully</response>
+    /// <response code="404">Pet not found</response>
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(ApiResponse<PetResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PetResponseDto>>> GetPet(int id)
     {
         var pet = await petRepository.GetByIdAsync(id);
@@ -27,8 +35,17 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         return Success(pet.ToResponseDto());
     }
 
-    // GET: api/pets/search?page=1&pageSize=10
+    /// <summary>
+    /// Searches pets with filters and pagination
+    /// </summary>
+    /// <param name="query">Search parameters including filters by species, breed, gender, size, age, adoption status, posted date, tags and pagination</param>
+    /// <returns>Paginated list of pets matching the search criteria</returns>
+    /// <response code="200">Search completed successfully</response>
     [HttpGet("search")]
+    [ProducesResponseType(
+        typeof(ApiResponse<PagedResult<PetResponseDto>>),
+        StatusCodes.Status200OK
+    )]
     public async Task<ActionResult<ApiResponse<PagedResult<PetResponseDto>>>> SearchPets(
         [FromQuery] SearchPetsQuery query
     )
@@ -49,9 +66,19 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         return Success(result);
     }
 
-    // POST: api/pets
+    /// <summary>
+    /// Creates a new pet for adoption (requires authentication)
+    /// </summary>
+    /// <param name="dto">Pet data including name, species, breed, gender, age, description, photos and tags</param>
+    /// <returns>Created pet data</returns>
+    /// <response code="201">Pet created successfully</response>
+    /// <response code="400">Invalid data (species doesn't exist, breed doesn't belong to species, or invalid tags)</response>
+    /// <response code="401">User not authenticated or invalid token</response>
     [HttpPost]
     [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PetResponseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PetResponseDto>>> CreatePet(CreatePetDto dto)
     {
         // Extract UserId from JWT token
