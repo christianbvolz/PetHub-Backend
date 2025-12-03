@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PetHub.API.DTOs.Common;
 
@@ -49,6 +50,14 @@ public abstract class ApiControllerBase : ControllerBase
     }
 
     /// <summary>
+    /// Returns a forbidden response (HTTP 403) with one or more error messages.
+    /// </summary>
+    protected ObjectResult Forbid(params string[] errors)
+    {
+        return StatusCode(403, ApiResponse<object>.ErrorResponse(errors));
+    }
+
+    /// <summary>
     /// Returns a created response (HTTP 201) with location header and data.
     /// </summary>
     protected CreatedAtActionResult CreatedAtAction<T>(
@@ -58,5 +67,36 @@ public abstract class ApiControllerBase : ControllerBase
     )
     {
         return base.CreatedAtAction(actionName, routeValues, ApiResponse<T>.SuccessResponse(data));
+    }
+
+    /// <summary>
+    /// Extracts and validates the user ID from the JWT token.
+    /// </summary>
+    /// <param name="userId">The extracted user ID if successful</param>
+    /// <returns>True if the user ID was successfully extracted and parsed; otherwise, false</returns>
+    protected bool TryGetUserId(out Guid userId)
+    {
+        userId = Guid.Empty;
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim))
+            return false;
+
+        return Guid.TryParse(userIdClaim, out userId);
+    }
+
+    /// <summary>
+    /// Gets the user ID from the JWT token or returns an Unauthorized response.
+    /// </summary>
+    /// <returns>The user ID if successful, or an Unauthorized ActionResult</returns>
+    protected ActionResult<Guid> GetUserIdOrUnauthorized()
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized("Invalid or missing user ID in token.");
+        }
+
+        return userId;
     }
 }

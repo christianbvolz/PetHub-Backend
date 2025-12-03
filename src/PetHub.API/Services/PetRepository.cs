@@ -22,6 +22,20 @@ public class PetRepository(AppDbContext context) : IPetRepository
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
+    public async Task<Pet?> GetByIdNoTrackingAsync(int id)
+    {
+        return await context
+            .Pets.AsNoTracking()
+            .AsSplitQuery()
+            .Include(p => p.User)
+            .Include(p => p.Species)
+            .Include(p => p.Breed)
+            .Include(p => p.Images)
+            .Include(p => p.PetTags)
+                .ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
     public async Task<PagedResult<Pet>> SearchAsync(SearchPetsQuery query)
     {
         var queryable = context
@@ -213,19 +227,8 @@ public class PetRepository(AppDbContext context) : IPetRepository
 
         await context.SaveChangesAsync();
 
-        // Load relationships for response
-        await context.Entry(pet).Reference(p => p.User).LoadAsync();
-        await context.Entry(pet).Reference(p => p.Species).LoadAsync();
-        await context.Entry(pet).Reference(p => p.Breed).LoadAsync();
-        await context.Entry(pet).Collection(p => p.Images).LoadAsync();
-        await context
-            .Entry(pet)
-            .Collection(p => p.PetTags)
-            .Query()
-            .Include(pt => pt.Tag)
-            .LoadAsync();
-
-        return pet;
+        // Reload pet with all relationships
+        return (await GetByIdAsync(pet.Id))!;
     }
 
     public async Task<bool> ValidateSpeciesExistsAsync(int speciesId)
@@ -248,6 +251,110 @@ public class PetRepository(AppDbContext context) : IPetRepository
             .Select(t => t.Id)
             .ToListAsync();
 
-        return tagIds.Except(existingTagIds).ToList();
+        return [.. tagIds.Except(existingTagIds)];
+    }
+
+    public async Task<Pet?> UpdateAsync(int id, UpdatePetDto dto, Guid userId)
+    {
+        // Note: Ownership validation is now handled in the controller before calling this method
+        // This method assumes the pet exists and the user has permission to update it
+
+        // Load the pet with tracking for update. The controller has already validated ownership
+        // using GetByIdNoTrackingAsync, so here we only need to load and modify the entity.
+        var pet = await context
+            .Pets.Include(p => p.Images)
+            .Include(p => p.PetTags)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (pet == null)
+            return null;
+
+        // Update fields only if provided
+        if (dto.Name != null)
+            pet.Name = dto.Name;
+        if (dto.BreedId.HasValue)
+            pet.BreedId = dto.BreedId.Value;
+        if (dto.Gender.HasValue)
+            pet.Gender = dto.Gender.Value;
+        if (dto.Size.HasValue)
+            pet.Size = dto.Size.Value;
+        if (dto.AgeInMonths.HasValue)
+            pet.AgeInMonths = dto.AgeInMonths.Value;
+        if (dto.Description != null)
+            pet.Description = dto.Description;
+        if (dto.IsCastrated.HasValue)
+            pet.IsCastrated = dto.IsCastrated.Value;
+        if (dto.IsVaccinated.HasValue)
+            pet.IsVaccinated = dto.IsVaccinated.Value;
+
+        // Update Images if provided
+        if (dto.ImageUrls != null)
+        {
+            // Remove existing images.
+            // Design decision: We replace all images rather than performing a delta update for simplicity and consistency.
+            // Note: For pets with a large number of images, this approach may have performance implications due to increased database operations.
+            context.PetImages.RemoveRange(pet.Images);
+
+            // Add new images
+            if (dto.ImageUrls.Count > 0)
+            {
+                var images = dto
+                    .ImageUrls.Select(url => new PetImage { PetId = pet.Id, Url = url })
+                    .ToList();
+                context.PetImages.AddRange(images);
+            }
+        }
+
+        // Update Tags if provided
+        // This replaces all existing tags with the new set provided in the DTO.
+        // This approach is chosen for simplicity, avoiding complex diff logic.
+        // Note: For pets with many tags, this may have performance implications.
+        if (dto.TagIds != null)
+        {
+            // Remove existing tags
+            context.PetTags.RemoveRange(pet.PetTags);
+
+            // Add new tags
+            if (dto.TagIds.Count > 0)
+            {
+                var petTags = dto
+                    .TagIds.Select(tagId => new PetTag { PetId = pet.Id, TagId = tagId })
+                    .ToList();
+                context.PetTags.AddRange(petTags);
+            }
+        }
+
+        await context.SaveChangesAsync();
+
+        // Reload pet with all relationships
+        return await GetByIdAsync(id);
+    }
+
+    public async Task<bool> DeleteAsync(int id, Guid userId)
+    {
+        var pet = await context.Pets.FirstOrDefaultAsync(p => p.Id == id);
+
+        if (pet == null)
+            return false;
+
+        context.Pets.Remove(pet);
+        await context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<List<Pet>> GetUserPetsAsync(Guid userId)
+    {
+        return await context
+            .Pets.AsSplitQuery()
+            .Include(p => p.User)
+            .Include(p => p.Species)
+            .Include(p => p.Breed)
+            .Include(p => p.Images)
+            .Include(p => p.PetTags)
+                .ThenInclude(pt => pt.Tag)
+            .Where(p => p.UserId == userId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
     }
 }

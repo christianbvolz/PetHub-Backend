@@ -27,11 +27,11 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserResponseDto>>> GetCurrentUser()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized("Invalid or missing user ID in token.");
-        }
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value; // Extracts Guid from successful result
 
         var user = await userRepository.GetByIdAsync(userId);
 
@@ -62,11 +62,11 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> PatchCurrentUser(PatchUserDto dto)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized("Invalid or missing user ID in token.");
-        }
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value; // Extracts Guid from successful result
 
         // Check if email or password is being changed (requires re-authentication)
         bool requiresReauth =

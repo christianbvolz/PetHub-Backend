@@ -7,8 +7,12 @@ namespace PetHub.API.Services;
 public interface IPetRepository
 {
     Task<Pet?> GetByIdAsync(int id);
+    Task<Pet?> GetByIdNoTrackingAsync(int id);
     Task<PagedResult<Pet>> SearchAsync(SearchPetsQuery query);
     Task<Pet> CreateAsync(CreatePetDto dto, Guid userId);
+    Task<Pet?> UpdateAsync(int id, UpdatePetDto dto, Guid userId);
+    Task<bool> DeleteAsync(int id, Guid userId);
+    Task<List<Pet>> GetUserPetsAsync(Guid userId);
     Task<bool> ValidateSpeciesExistsAsync(int speciesId);
     Task<bool> ValidateBreedBelongsToSpeciesAsync(int breedId, int speciesId);
     Task<List<int>> ValidateTagsExistAsync(List<int> tagIds);

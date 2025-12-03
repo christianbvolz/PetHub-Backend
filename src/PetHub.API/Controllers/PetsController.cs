@@ -81,12 +81,11 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<PetResponseDto>>> CreatePet(CreatePetDto dto)
     {
-        // Extract UserId from JWT token
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            return Unauthorized("Invalid or missing user ID in token.");
-        }
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value; // Extracts Guid from successful result
 
         // Validate Species exists
         if (!await petRepository.ValidateSpeciesExistsAsync(dto.SpeciesId))
@@ -113,5 +112,150 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         var pet = await petRepository.CreateAsync(dto, userId);
 
         return CreatedAtAction(nameof(GetPet), new { id = pet.Id }, pet.ToResponseDto());
+    }
+
+    /// <summary>
+    /// Updates an existing pet (requires authentication and ownership)
+    /// </summary>
+    /// <param name="id">Pet ID to update</param>
+    /// <param name="dto">Pet data to update (partial update supported)</param>
+    /// <returns>Updated pet data</returns>
+    /// <response code="200">Pet updated successfully</response>
+    /// <response code="400">Invalid data (breed doesn't belong to species, or invalid tags)</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    /// <response code="403">User is not the owner of this pet</response>
+    /// <response code="404">Pet not found</response>
+    [HttpPatch("{id}")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PetResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PetResponseDto>>> UpdatePet(int id, UpdatePetDto dto)
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value; // Extracts Guid from successful result
+
+        // Get pet to validate ownership and for breed validation (without tracking to avoid EF conflicts)
+        var pet = await petRepository.GetByIdNoTrackingAsync(id);
+        if (pet == null)
+        {
+            return NotFound($"Pet with ID {id} not found.");
+        }
+
+        // Validate Breed if provided
+        if (dto.BreedId.HasValue)
+        {
+            if (
+                !await petRepository.ValidateBreedBelongsToSpeciesAsync(
+                    dto.BreedId.Value,
+                    pet.SpeciesId
+                )
+            )
+            {
+                return Error(
+                    $"Breed with ID {dto.BreedId.Value} not found or doesn't belong to the pet's species."
+                );
+            }
+        }
+
+        // Validate Tags if provided
+        if (dto.TagIds != null && dto.TagIds.Count > 0)
+        {
+            var invalidTagIds = await petRepository.ValidateTagsExistAsync(dto.TagIds);
+            if (invalidTagIds.Count > 0)
+            {
+                return Error($"Invalid tag IDs: {string.Join(", ", invalidTagIds)}");
+            }
+        }
+
+        // Check ownership before update
+        if (pet.UserId != userId)
+        {
+            return Forbid("You don't have permission to update this pet.");
+        }
+
+        // Update Pet
+        var updatedPet = await petRepository.UpdateAsync(id, dto, userId);
+
+        if (updatedPet == null)
+        {
+            return Error("Failed to update pet.");
+        }
+
+        return Success(updatedPet.ToResponseDto());
+    }
+
+    /// <summary>
+    /// Deletes a pet (requires authentication and ownership)
+    /// </summary>
+    /// <param name="id">Pet ID to delete</param>
+    /// <returns>Success confirmation</returns>
+    /// <response code="200">Pet deleted successfully</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    /// <response code="403">User is not the owner of this pet</response>
+    /// <response code="404">Pet not found</response>
+    [HttpDelete("{id}")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<object>>> DeletePet(int id)
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value; // Extracts Guid from successful result
+
+        // Check if pet exists
+        var pet = await petRepository.GetByIdAsync(id);
+        if (pet == null)
+        {
+            return NotFound($"Pet with ID {id} not found.");
+        }
+
+        // Check ownership
+        if (pet.UserId != userId)
+        {
+            return Forbid("You don't have permission to delete this pet.");
+        }
+
+        var success = await petRepository.DeleteAsync(id, userId);
+
+        if (!success)
+        {
+            return Error("Failed to delete pet.");
+        }
+
+        return Success(new { }, "Pet deleted successfully.");
+    }
+
+    /// <summary>
+    /// Retrieves all pets owned by the authenticated user
+    /// </summary>
+    /// <returns>List of user's pets</returns>
+    /// <response code="200">Pets retrieved successfully</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<List<PetResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<List<PetResponseDto>>>> GetMyPets()
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value; // Extracts Guid from successful result
+
+        var pets = await petRepository.GetUserPetsAsync(userId);
+
+        return Success(pets.Select(p => p.ToResponseDto()).ToList());
     }
 }

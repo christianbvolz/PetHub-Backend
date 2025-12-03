@@ -15,6 +15,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Tag> Tags { get; set; }
     public DbSet<PetTag> PetTags { get; set; }
 
+    // Adoption Tables
+    public DbSet<AdoptionRequest> AdoptionRequests { get; set; }
+
     // Chat Tables
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
