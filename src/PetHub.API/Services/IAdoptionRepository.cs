@@ -1,4 +1,3 @@
-using PetHub.API.DTOs.Adoption;
 using PetHub.API.Models;
 
 namespace PetHub.API.Services;
