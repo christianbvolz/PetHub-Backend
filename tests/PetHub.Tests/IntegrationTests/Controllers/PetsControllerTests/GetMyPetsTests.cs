@@ -200,11 +200,10 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
         pets.Should().NotBeNull();
-        pets = pets!;
-        pets.Should().HaveCount(3);
+        pets!.Should().HaveCount(3);
 
         // Verify descending order (newest first)
-        for (int index = 0; index < pets.Count - 1; index++)
+        for (int index = 0; index < pets!.Count - 1; index++)
         {
             pets[index].CreatedAt.Should().BeOnOrAfter(pets[index + 1].CreatedAt);
         }
