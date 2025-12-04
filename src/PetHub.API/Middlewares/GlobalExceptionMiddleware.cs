@@ -1,47 +1,85 @@
 using System.Net;
-using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace PetHub.API.Middlewares;
 
 public class GlobalExceptionMiddleware(
     RequestDelegate next,
-    ILogger<GlobalExceptionMiddleware> logger
+    ILogger<GlobalExceptionMiddleware> logger,
+    IHostEnvironment environment
 )
 {
-    // The "next" delegate is the reference to the next middleware in the pipeline
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            // Try to pass the request to the next step (e.g., the Controller)
             await next(context);
         }
         catch (Exception ex)
         {
-            // If ANY error happens down the line, we catch it here
-            logger.LogError(ex, "An unhandled exception occurred.");
+            // Don't log OperationCanceledException (client disconnected)
+            if (ex is OperationCanceledException)
+            {
+                context.Response.StatusCode = 499; // Client Closed Request
+                return;
+            }
+
+            logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        context.Response.ContentType = "application/json";
+        context.Response.ContentType = "application/problem+json";
 
-        // Default to 500 Internal Server Error
-        var response = new
+        var problemDetails = CreateProblemDetails(context, exception);
+
+        context.Response.StatusCode =
+            problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
+
+        await context.Response.WriteAsJsonAsync(problemDetails);
+    }
+
+    private ProblemDetails CreateProblemDetails(HttpContext context, Exception exception)
+    {
+        // Determine status code and title based on exception type
+        var (statusCode, title) = exception switch
         {
-            message = "An internal server error occurred.",
-            details = exception.Message,
+            KeyNotFoundException => (HttpStatusCode.NotFound, "Resource not found"),
+            ArgumentException or ArgumentNullException => (
+                HttpStatusCode.BadRequest,
+                "Invalid argument"
+            ),
+            UnauthorizedAccessException => (HttpStatusCode.Forbidden, "Access denied"),
+            InvalidOperationException => (HttpStatusCode.Conflict, "Invalid operation"),
+            _ => (HttpStatusCode.InternalServerError, "An error occurred"),
         };
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-        // Custom logic: You can handle specific errors differently
-        // Example: If it's a specific "NotFoundException", return 404.
+        var problemDetails = new ProblemDetails
+        {
+            Status = (int)statusCode,
+            Title = title,
+            Type = $"https://httpstatuses.com/{(int)statusCode}",
+            Instance = context.Request.Path,
+        };
 
-        // Serialize the error response to JSON
-        var jsonResponse = JsonSerializer.Serialize(response);
+        // Only expose exception details in Development environment
+        if (environment.IsDevelopment())
+        {
+            problemDetails.Detail = exception.Message;
+            problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+            problemDetails.Extensions["exceptionType"] = exception.GetType().Name;
+        }
+        else
+        {
+            // Production: generic message
+            problemDetails.Detail =
+                statusCode == HttpStatusCode.InternalServerError
+                    ? "An internal server error occurred. Please try again later."
+                    : exception.Message;
+        }
 
-        return context.Response.WriteAsync(jsonResponse);
+        return problemDetails;
     }
 }
