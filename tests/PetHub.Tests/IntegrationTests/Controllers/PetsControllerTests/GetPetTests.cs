@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -14,62 +16,49 @@ namespace PetHub.Tests.IntegrationTests.Controllers.PetsControllerTests;
 /// Integration tests for the GetPet endpoint
 /// Tests the complete HTTP request/response flow including database interactions
 /// </summary>
-public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>, IAsyncLifetime
+public class GetPetIntegrationTests : IntegrationTestBase
 {
-    private readonly HttpClient _client;
-    private readonly PetHubWebApplicationFactory _factory;
     private int _existingPetId;
 
     public GetPetIntegrationTests(PetHubWebApplicationFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-    }
+        : base(factory) { }
 
-    public async Task InitializeAsync()
+    public override async Task InitializeAsync()
     {
-        // Seed test data before each test class (shared across all tests)
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await dbContext.Database.EnsureDeletedAsync();
-        await dbContext.Database.EnsureCreatedAsync();
-        await TestDataSeeder.SeedTestData(dbContext);
+        await base.InitializeAsync();
 
         // Get an existing pet ID for tests
-        var existingPet = dbContext.Pets.FirstOrDefault();
-        _existingPetId = existingPet?.Id ?? 0;
-    }
-
-    public Task DisposeAsync()
-    {
-        // Cleanup if needed
-        return Task.CompletedTask;
+        await WithDbContextAsync(async dbContext =>
+        {
+            var existingPet = await dbContext.Pets.FirstOrDefaultAsync();
+            _existingPetId = existingPet?.Id ?? 0;
+        });
     }
 
     [Fact]
     public async Task GetPet_WithValidId_ReturnsOk()
     {
         // Arrange
-        var requestUri = $"/api/pets/{_existingPetId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
     }
 
     [Fact]
     public async Task GetPet_WithValidId_ReturnsPetDetails()
     {
         // Arrange
-        var requestUri = $"/api/pets/{_existingPetId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
@@ -81,13 +70,13 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
     public async Task GetPet_WithValidId_IncludesAllRelationships()
     {
         // Arrange
-        var requestUri = $"/api/pets/{_existingPetId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
@@ -117,65 +106,65 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
     {
         // Arrange
         var nonExistentId = 999999;
-        var requestUri = $"/api/pets/{nonExistentId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(nonExistentId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.ShouldBeNotFound();
     }
 
     [Fact]
     public async Task GetPet_WithInvalidId_ReturnsBadRequest()
     {
         // Arrange
-        var requestUri = "/api/pets/invalid";
+        var requestUri = $"{TestConstants.IntegrationTests.ApiPaths.Pets}/invalid";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.ShouldBeBadRequest();
     }
 
     [Fact]
     public async Task GetPet_WithZeroId_ReturnsNotFound()
     {
         // Arrange
-        var requestUri = "/api/pets/0";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(0);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.ShouldBeNotFound();
     }
 
     [Fact]
     public async Task GetPet_WithNegativeId_ReturnsNotFound()
     {
         // Arrange
-        var requestUri = "/api/pets/-1";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(-1);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.ShouldBeNotFound();
     }
 
     [Fact]
     public async Task GetPet_ResponseStructure_IsCorrect()
     {
         // Arrange
-        var requestUri = $"/api/pets/{_existingPetId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
@@ -211,17 +200,22 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
     public async Task GetPet_WithTags_ReturnsTagsCorrectly()
     {
         // Arrange - Get "Rex" who has tags
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var rexId = dbContext.Pets.FirstOrDefault(p => p.Name == "Rex")?.Id ?? 0;
+        var rexId =
+            (
+                await dbContext.Pets.FirstOrDefaultAsync(p =>
+                    p.Name == TestConstants.IntegrationTests.PetNames.Rex
+                )
+            )?.Id ?? 0;
 
-        var requestUri = $"/api/pets/{rexId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(rexId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
@@ -235,22 +229,27 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
     [Fact]
     public async Task GetPet_IncludesAdoptedPets_WhenQuerying()
     {
-        // Arrange - Get "Adopted Pet"
-        using var scope = _factory.Services.CreateScope();
+        // Arrange - Get "Adopted Pet" from seeded data
+        using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var adoptedPetId = dbContext.Pets.FirstOrDefault(p => p.Name == "Adopted Pet")?.Id ?? 0;
+        var adoptedPetId =
+            (
+                await dbContext.Pets.FirstOrDefaultAsync(p =>
+                    p.Name == TestConstants.IntegrationTests.PetNames.Thor
+                )
+            )?.Id ?? 0;
 
-        var requestUri = $"/api/pets/{adoptedPetId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(adoptedPetId);
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
-        pet!.Name.Should().Be("Adopted Pet");
+        pet!.Name.Should().Be(TestConstants.IntegrationTests.PetNames.Thor);
         pet.IsAdopted.Should().BeTrue();
     }
 
@@ -258,18 +257,18 @@ public class GetPetIntegrationTests : IClassFixture<PetHubWebApplicationFactory>
     public async Task GetPet_ReturnsConsistentData_OnMultipleRequests()
     {
         // Arrange
-        var requestUri = $"/api/pets/{_existingPetId}";
+        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
 
         // Act
-        var response1 = await _client.GetAsync(requestUri);
+        var response1 = await Client.GetAsync(requestUri);
         var pet1 = await response1.ReadApiResponseDataAsync<PetResponseDto>();
 
-        var response2 = await _client.GetAsync(requestUri);
+        var response2 = await Client.GetAsync(requestUri);
         var pet2 = await response2.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Assert
-        response1.StatusCode.Should().Be(HttpStatusCode.OK);
-        response2.StatusCode.Should().Be(HttpStatusCode.OK);
+        response1.ShouldBeOk();
+        response2.ShouldBeOk();
 
         pet1.Should().NotBeNull();
         pet2.Should().NotBeNull();

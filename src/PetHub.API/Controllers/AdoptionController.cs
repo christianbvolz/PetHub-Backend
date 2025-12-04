@@ -83,7 +83,7 @@ public class AdoptionController(IAdoptionRepository adoptionRepository) : ApiCon
 
         if (!hasPermission)
         {
-            return Forbid("You don't have permission to approve this adoption request.");
+            return ForbiddenResponse("You don't have permission to approve this adoption request.");
         }
 
         var approvedRequest = await adoptionRepository.ApproveAdoptionRequestAsync(
@@ -145,7 +145,7 @@ public class AdoptionController(IAdoptionRepository adoptionRepository) : ApiCon
 
         if (!hasPermission)
         {
-            return Forbid("You don't have permission to mark this pet as adopted.");
+            return ForbiddenResponse("You don't have permission to mark this pet as adopted.");
         }
 
         await adoptionRepository.MarkPetAsAdoptedAsync(petId, userId);

@@ -49,7 +49,7 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         nextCalled.Should().BeTrue();
-        _context.Response.StatusCode.Should().Be(200);
+        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusOk);
     }
 
     #endregion
@@ -73,7 +73,7 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         // 499 is a non-standard HTTP status code ("Client Closed Request"), commonly used by nginx and some web servers.
-        _context.Response.StatusCode.Should().Be(499);
+        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusClientClosedRequest);
         _loggerMock.Verify(
             x =>
                 x.Log(
@@ -92,16 +92,36 @@ public class GlobalExceptionMiddlewareTests
     #region Exception Types - Development Environment
 
     [Theory]
-    [InlineData(typeof(KeyNotFoundException), 404, "Resource not found", "Pet not found")]
-    [InlineData(typeof(ArgumentException), 400, "Invalid argument", "Invalid tag ID")]
+    [InlineData(
+        typeof(KeyNotFoundException),
+        TestConstants.Http.StatusNotFound,
+        TestConstants.ExceptionTitles.ResourceNotFound,
+        TestConstants.ExceptionMessages.PetNotFound
+    )]
+    [InlineData(
+        typeof(ArgumentException),
+        TestConstants.Http.StatusBadRequest,
+        TestConstants.ExceptionTitles.InvalidArgument,
+        TestConstants.ExceptionMessages.InvalidTagId
+    )]
     [InlineData(
         typeof(ArgumentNullException),
-        400,
-        "Invalid argument",
-        "Value cannot be null. (Parameter 'petDto')"
+        TestConstants.Http.StatusBadRequest,
+        TestConstants.ExceptionTitles.InvalidArgument,
+        TestConstants.ExceptionMessages.ArgumentNullPetDto
     )]
-    [InlineData(typeof(UnauthorizedAccessException), 403, "Access denied", "User not authorized")]
-    [InlineData(typeof(InvalidOperationException), 409, "Invalid operation", "Pet already adopted")]
+    [InlineData(
+        typeof(UnauthorizedAccessException),
+        TestConstants.Http.StatusForbidden,
+        TestConstants.ExceptionTitles.AccessDenied,
+        TestConstants.ExceptionMessages.UserNotAuthorized
+    )]
+    [InlineData(
+        typeof(InvalidOperationException),
+        TestConstants.Http.StatusConflict,
+        TestConstants.ExceptionTitles.InvalidOperation,
+        TestConstants.ExceptionMessages.PetAlreadyAdopted
+    )]
     public async Task InvokeAsync_WithException_ReturnsCorrectStatusAndDetails_InDevelopment(
         Type exceptionType,
         int expectedStatusCode,
@@ -145,7 +165,7 @@ public class GlobalExceptionMiddlewareTests
     {
         // Arrange
         _environmentMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
-        var exception = new Exception("Database connection failed");
+        var exception = new Exception(TestConstants.ExceptionMessages.DatabaseConnectionFailed);
         RequestDelegate next = (HttpContext ctx) => throw exception;
 
         var middleware = new GlobalExceptionMiddleware(
@@ -158,11 +178,11 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(_context);
 
         // Assert
-        _context.Response.StatusCode.Should().Be(500);
+        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusInternalServerError);
         var problemDetails = await GetProblemDetailsFromResponse();
-        problemDetails.Status.Should().Be(500);
-        problemDetails.Title.Should().Be("An error occurred");
-        problemDetails.Detail.Should().Be("Database connection failed");
+        problemDetails.Status.Should().Be(TestConstants.Http.StatusInternalServerError);
+        problemDetails.Title.Should().Be(TestConstants.ExceptionTitles.AnErrorOccurred);
+        problemDetails.Detail.Should().Be(TestConstants.ExceptionMessages.DatabaseConnectionFailed);
         problemDetails.Extensions.Should().ContainKey("stackTrace");
         problemDetails.Extensions.Should().ContainKey("exceptionType");
     }
@@ -172,8 +192,16 @@ public class GlobalExceptionMiddlewareTests
     #region Exception Types - Production Environment
 
     [Theory]
-    [InlineData(typeof(KeyNotFoundException), 404, "Pet with ID 999 not found")]
-    [InlineData(typeof(ArgumentException), 400, "Invalid tag ID format")]
+    [InlineData(
+        typeof(KeyNotFoundException),
+        TestConstants.Http.StatusNotFound,
+        TestConstants.ExceptionMessages.PetWithIdNotFound
+    )]
+    [InlineData(
+        typeof(ArgumentException),
+        TestConstants.Http.StatusBadRequest,
+        TestConstants.ExceptionMessages.InvalidTagIdFormat
+    )]
     public async Task InvokeAsync_WithException_ReturnsMessageWithoutDetails_InProduction(
         Type exceptionType,
         int expectedStatusCode,
@@ -220,7 +248,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(_context);
 
         // Assert
-        _context.Response.StatusCode.Should().Be(500);
+        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusInternalServerError);
         var problemDetails = await GetProblemDetailsFromResponse();
         problemDetails
             .Detail.Should()
@@ -238,7 +266,7 @@ public class GlobalExceptionMiddlewareTests
     {
         // Arrange
         _environmentMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
-        var exception = new Exception("Test exception");
+        var exception = new Exception(TestConstants.ExceptionMessages.TestException);
         RequestDelegate next = (HttpContext ctx) => throw exception;
 
         var middleware = new GlobalExceptionMiddleware(
@@ -296,7 +324,7 @@ public class GlobalExceptionMiddlewareTests
     {
         // Arrange
         _environmentMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
-        _context.Request.Path = "/api/pets/999";
+        _context.Request.Path = TestConstants.Http.ValidRequestPath;
         RequestDelegate next = (HttpContext ctx) => throw new KeyNotFoundException();
 
         var middleware = new GlobalExceptionMiddleware(
@@ -310,7 +338,7 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse();
-        problemDetails.Instance.Should().Be("/api/pets/999");
+        problemDetails.Instance.Should().Be(TestConstants.Http.ValidRequestPath);
     }
 
     #endregion

@@ -8,6 +8,8 @@ using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
 using PetHub.API.Models;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -54,18 +56,19 @@ public class ApproveAdoptionRequestTests
         var species = dbContext.Species.First();
         var breed = dbContext.Breeds.First(b => b.SpeciesId == species.Id);
 
-        var createDto = new CreatePetDto
-        {
-            Name = "Pet To Be Adopted",
-            SpeciesId = species.Id,
-            BreedId = breed.Id,
-            Gender = PetGender.Male,
-            Size = PetSize.Medium,
-            AgeInMonths = 24,
-            ImageUrls = new List<string> { "https://example.com/adopt.jpg" },
-        };
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
+            speciesId: species.Id,
+            breedId: breed.Id,
+            name: "Pet To Be Adopted"
+        );
+        createDto.Gender = PetGender.Male;
+        createDto.Size = PetSize.Medium;
+        createDto.AgeInMonths = 24;
 
-        var response = await _client.PostAsJsonAsync("/api/pets", createDto);
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.Pets,
+            createDto
+        );
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         _testPetId = createdPet!.Id;
 
@@ -85,17 +88,23 @@ public class ApproveAdoptionRequestTests
 
         // Get adopter IDs
         _client.AddAuthToken(adopter1Token);
-        var adopter1Response = await _client.GetAsync("/api/users/me");
+        var adopter1Response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
         var adopter1 =
             await adopter1Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
 
         _client.AddAuthToken(adopter2Token);
-        var adopter2Response = await _client.GetAsync("/api/users/me");
+        var adopter2Response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
         var adopter2 =
             await adopter2Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
 
         _client.AddAuthToken(adopter3Token);
-        var adopter3Response = await _client.GetAsync("/api/users/me");
+        var adopter3Response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
         var adopter3 =
             await adopter3Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
 
@@ -158,7 +167,7 @@ public class ApproveAdoptionRequestTests
         );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
     }
 
     [Fact]
@@ -187,10 +196,15 @@ public class ApproveAdoptionRequestTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        await _client.PatchAsJsonAsync($"/api/adoption/requests/{_request1Id}/approve", new { });
+        await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AdoptionRequestApprove(_request1Id),
+            new { }
+        );
 
         // Verify pet is marked as adopted
-        var petResponse = await _client.GetAsync($"/api/pets/{_testPetId}");
+        var petResponse = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+        );
         var pet = await petResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Assert
@@ -205,7 +219,10 @@ public class ApproveAdoptionRequestTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        await _client.PatchAsJsonAsync($"/api/adoption/requests/{_request1Id}/approve", new { });
+        await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AdoptionRequestApprove(_request1Id),
+            new { }
+        );
 
         // Verify other requests are rejected
         using var scope = _factory.Services.CreateScope();
@@ -232,7 +249,7 @@ public class ApproveAdoptionRequestTests
         );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.ShouldBeNotFound();
         var apiResponse = await response.ReadApiResponseAsync<object>();
         apiResponse!.Errors.Should().Contain(e => e.Contains("not found"));
     }
@@ -250,7 +267,7 @@ public class ApproveAdoptionRequestTests
         );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.ShouldBeForbidden();
         var apiResponse = await response.ReadApiResponseAsync<object>();
         apiResponse!.Errors.Should().Contain(e => e.Contains("permission"));
     }
@@ -268,7 +285,7 @@ public class ApproveAdoptionRequestTests
         );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
     }
 
     [Fact]
@@ -298,7 +315,10 @@ public class ApproveAdoptionRequestTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        await _client.PatchAsJsonAsync($"/api/adoption/requests/{_request2Id}/approve", new { });
+        await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AdoptionRequestApprove(_request2Id),
+            new { }
+        );
 
         // Verify only request2 is approved
         using var scope = _factory.Services.CreateScope();
@@ -335,7 +355,7 @@ public class ApproveAdoptionRequestTests
         );
 
         // Assert - Should fail because request is not pending
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.ShouldBeBadRequest();
     }
 
     [Fact]
@@ -356,7 +376,10 @@ public class ApproveAdoptionRequestTests
             ImageUrls = new List<string> { "https://example.com/other.jpg" },
         };
 
-        var petResponse = await _client.PostAsJsonAsync("/api/pets", createDto);
+        var petResponse = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.Pets,
+            createDto
+        );
         var otherPet = await petResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         using var scope = _factory.Services.CreateScope();
@@ -374,7 +397,10 @@ public class ApproveAdoptionRequestTests
         await dbContext.SaveChangesAsync();
 
         // Act - Approve request for first pet
-        await _client.PatchAsJsonAsync($"/api/adoption/requests/{_request1Id}/approve", new { });
+        await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AdoptionRequestApprove(_request1Id),
+            new { }
+        );
 
         // Assert - Other pet's request should still be pending
         var otherRequestAfter = await dbContext.AdoptionRequests.FindAsync(otherPetRequest.Id);

@@ -9,7 +9,7 @@ public class PasswordHelperTests
     public void HashPassword_WithValidPassword_ReturnsNonEmptyHash()
     {
         // Arrange
-        var password = "SecurePassword123!";
+        var password = TestConstants.Passwords.ValidPassword;
 
         // Act
         var hash = PasswordHelper.HashPassword(password);
@@ -23,7 +23,7 @@ public class PasswordHelperTests
     public void HashPassword_WithSamePassword_ReturnsDifferentHashes()
     {
         // Arrange
-        var password = "SecurePassword123!";
+        var password = TestConstants.Passwords.ValidPassword;
 
         // Act
         var hash1 = PasswordHelper.HashPassword(password);
@@ -37,8 +37,8 @@ public class PasswordHelperTests
     public void HashPassword_WithDifferentPasswords_ReturnsDifferentHashes()
     {
         // Arrange
-        var password1 = "Password123!";
-        var password2 = "DifferentPassword456!";
+        var password1 = TestConstants.Passwords.AnotherValidPassword;
+        var password2 = TestConstants.Passwords.DifferentPassword;
 
         // Act
         var hash1 = PasswordHelper.HashPassword(password1);
@@ -52,7 +52,7 @@ public class PasswordHelperTests
     public void VerifyPassword_WithCorrectPassword_ReturnsTrue()
     {
         // Arrange
-        var password = "SecurePassword123!";
+        var password = TestConstants.Passwords.ValidPassword;
         var hash = PasswordHelper.HashPassword(password);
 
         // Act
@@ -66,8 +66,8 @@ public class PasswordHelperTests
     public void VerifyPassword_WithIncorrectPassword_ReturnsFalse()
     {
         // Arrange
-        var correctPassword = "SecurePassword123!";
-        var incorrectPassword = "WrongPassword456!";
+        var correctPassword = TestConstants.Passwords.ValidPassword;
+        var incorrectPassword = TestConstants.Passwords.WrongPassword;
         var hash = PasswordHelper.HashPassword(correctPassword);
 
         // Act
@@ -81,8 +81,8 @@ public class PasswordHelperTests
     public void VerifyPassword_WithCaseSensitivePassword_ReturnsFalse()
     {
         // Arrange
-        var correctPassword = "SecurePassword123!";
-        var wrongCasePassword = "securepassword123!";
+        var correctPassword = TestConstants.Passwords.ValidPassword;
+        var wrongCasePassword = TestConstants.Passwords.WrongCasePassword;
         var hash = PasswordHelper.HashPassword(correctPassword);
 
         // Act
@@ -96,8 +96,8 @@ public class PasswordHelperTests
     public void VerifyPassword_WithMalformedHash_ThrowsException()
     {
         // Arrange
-        var password = "SecurePassword123!";
-        var malformedHash = "not-a-valid-bcrypt-hash";
+        var password = TestConstants.Passwords.ValidPassword;
+        var malformedHash = TestConstants.Passwords.MalformedHash;
 
         // Act
         Action act = () => PasswordHelper.VerifyPassword(password, malformedHash);
@@ -107,9 +107,9 @@ public class PasswordHelperTests
     }
 
     [Theory]
-    [InlineData("short")]
-    [InlineData("averageLengthPassword123")]
-    [InlineData("VeryLongPasswordWithLotsOfCharacters123456789!@#$%^&*()")]
+    [InlineData(TestConstants.Passwords.ShortPassword)]
+    [InlineData(TestConstants.Passwords.AveragePassword)]
+    [InlineData(TestConstants.Passwords.LongPassword)]
     public void HashPassword_WithVariousLengths_ReturnsValidHash(string password)
     {
         // Act
@@ -124,7 +124,7 @@ public class PasswordHelperTests
     public void VerifyPassword_WithSpecialCharacters_WorksCorrectly()
     {
         // Arrange
-        var password = "🔒🔑Password123!こんにちは"; // Emojis, special chars and Japanese
+        var password = TestConstants.Passwords.SpecialCharsPassword; // Emojis, special chars and Japanese
         var hash = PasswordHelper.HashPassword(password);
 
         // Act
@@ -174,10 +174,10 @@ public class PasswordHelperTests
     public void VerifyPassword_WithInvalidPassword_ThrowsArgumentException(string invalidPassword)
     {
         // Arrange
-        var validHash = PasswordHelper.HashPassword("ValidPassword123!");
+        var validHash = PasswordHelper.HashPassword(TestConstants.Passwords.ValidPassword);
 
         // Act
-        Action act = () => PasswordHelper.VerifyPassword(invalidPassword, validHash);
+        var act = () => PasswordHelper.VerifyPassword(invalidPassword, validHash);
 
         // Assert
         act.Should()
@@ -194,7 +194,8 @@ public class PasswordHelperTests
     public void VerifyPassword_WithEmptyHash_ThrowsArgumentException(string emptyHash)
     {
         // Act
-        Action act = () => PasswordHelper.VerifyPassword("ValidPassword123!", emptyHash);
+        Action act = () =>
+            PasswordHelper.VerifyPassword(TestConstants.Passwords.ValidPassword, emptyHash);
 
         // Assert
         act.Should()
@@ -208,7 +209,7 @@ public class PasswordHelperTests
     public void VerifyPassword_WithNullPassword_ThrowsArgumentException()
     {
         // Arrange
-        var validHash = PasswordHelper.HashPassword("ValidPassword123!");
+        var validHash = PasswordHelper.HashPassword(TestConstants.Passwords.ValidPassword);
 
         // Act
         Action act = () => PasswordHelper.VerifyPassword(null!, validHash);
@@ -225,7 +226,8 @@ public class PasswordHelperTests
     public void VerifyPassword_WithNullHash_ThrowsArgumentException()
     {
         // Act
-        Action act = () => PasswordHelper.VerifyPassword("ValidPassword123!", null!);
+        Action act = () =>
+            PasswordHelper.VerifyPassword(TestConstants.Passwords.ValidPassword, null!);
 
         // Assert
         act.Should()

@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 
 namespace PetHub.Tests.IntegrationTests.Helpers;
 
@@ -17,43 +19,38 @@ public static class AuthenticationHelper
     )
     {
         // Generate unique email if not provided to avoid conflicts in tests
-        email ??= $"test-{Guid.NewGuid()}@example.com";
+        email ??= TestConstants.IntegrationTests.Emails.GenerateUnique();
 
-        var registerDto = new CreateUserDto
-        {
-            Name = "Test User",
-            Email = email,
-            Password = "test123456",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Test",
-            StreetNumber = "123",
-        };
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            email: email,
+            name: TestConstants.IntegrationTests.UserData.DefaultName
+        );
 
-        var response = await client.PostAsJsonAsync("/api/auth/register", registerDto);
-        response.EnsureSuccessStatusCode();
+        var response = await client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
 
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponseDto>>();
-        return apiResponse?.Data?.Token
+        var apiResponse = await response.ShouldBeOk().WithContent<ApiResponse<LoginResponseDto>>();
+        return apiResponse.Data?.Token
             ?? throw new InvalidOperationException("Token not received from registration");
     }
 
     public static async Task<string> LoginAndGetTokenAsync(
         HttpClient client,
-        string email = "test@example.com",
-        string password = "test123456"
+        string email = TestConstants.IntegrationTests.Emails.DefaultAuthEmail,
+        string password = TestConstants.IntegrationTests.Emails.DefaultAuthPassword
     )
     {
-        var loginDto = new LoginDto { Email = email, Password = password };
+        var loginDto = TestConstants.DtoBuilders.CreateLoginDto(email: email, password: password);
 
-        var response = await client.PostAsJsonAsync("/api/auth/login", loginDto);
-        response.EnsureSuccessStatusCode();
+        var response = await client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthLogin,
+            loginDto
+        );
 
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponseDto>>();
-        return apiResponse?.Data?.Token
+        var apiResponse = await response.ShouldBeOk().WithContent<ApiResponse<LoginResponseDto>>();
+        return apiResponse.Data?.Token
             ?? throw new InvalidOperationException("Token not received from login");
     }
 

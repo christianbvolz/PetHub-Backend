@@ -52,7 +52,7 @@ public abstract class ApiControllerBase : ControllerBase
     /// <summary>
     /// Returns a forbidden response (HTTP 403) with one or more error messages.
     /// </summary>
-    protected ObjectResult Forbid(params string[] errors)
+    protected ObjectResult ForbiddenResponse(params string[] errors)
     {
         return StatusCode(403, ApiResponse<object>.ErrorResponse(errors));
     }

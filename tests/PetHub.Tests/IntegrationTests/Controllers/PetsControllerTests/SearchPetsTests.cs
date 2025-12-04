@@ -2,11 +2,11 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using PetHub.API.Data;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -16,32 +16,10 @@ namespace PetHub.Tests.IntegrationTests.Controllers.PetsControllerTests;
 /// Integration tests for the SearchPets endpoint
 /// Tests the complete HTTP request/response flow including database interactions
 /// </summary>
-public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFactory>, IAsyncLifetime
+public class SearchPetsIntegrationTests : IntegrationTestBase
 {
-    private readonly HttpClient _client;
-    private readonly PetHubWebApplicationFactory _factory;
-
     public SearchPetsIntegrationTests(PetHubWebApplicationFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-    }
-
-    public async Task InitializeAsync()
-    {
-        // Seed test data before each test class (shared across all tests)
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await dbContext.Database.EnsureDeletedAsync();
-        await dbContext.Database.EnsureCreatedAsync();
-        await TestDataSeeder.SeedTestData(dbContext);
-    }
-
-    public Task DisposeAsync()
-    {
-        // Cleanup if needed
-        return Task.CompletedTask;
-    }
+        : base(factory) { }
 
     [Fact]
     public async Task SearchPets_WithoutFilters_ReturnsAllAvailablePets()
@@ -50,10 +28,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?page=1&pageSize=10";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -74,10 +52,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?page=1&pageSize=2";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -96,10 +74,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?species=Cachorro";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -116,10 +94,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?gender=Female";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -136,10 +114,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?size=Large";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -156,10 +134,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?breed=Labrador";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -176,10 +154,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?colors=Branco";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -196,10 +174,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?colors=Branco,Preto";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -218,10 +196,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?coat=Longo";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -238,10 +216,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?species=Cachorro&size=Large";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -258,10 +236,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?species=Papagaio";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -277,10 +255,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?page=999&pageSize=10";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -295,10 +273,10 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search?page=1&pageSize=1";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
@@ -324,14 +302,16 @@ public class SearchPetsIntegrationTests : IClassFixture<PetHubWebApplicationFact
         var requestUri = "/api/pets/search";
 
         // Act
-        var response = await _client.GetAsync(requestUri);
+        var response = await Client.GetAsync(requestUri);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
-        result!.Items.Should().NotContain(p => p.Name == "Adopted Pet");
+        result!
+            .Items.Should()
+            .NotContain(p => p.Name == TestConstants.IntegrationTests.PetNames.Thor);
         result.Items.Should().OnlyContain(p => !p.IsAdopted);
     }
 }

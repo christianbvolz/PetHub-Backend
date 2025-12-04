@@ -24,37 +24,75 @@ public static class TestDataSeeder
         var testUser = new User
         {
             Id = UuidHelper.NewId(),
-            Name = "Test User",
-            Email = "test@pethub.com",
-            PasswordHash = PasswordHelper.HashPassword("testpassword"),
-            PhoneNumber = "11999999999",
-            ZipCode = "01000000",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
+            Name = TestConstants.IntegrationTests.SeededUsers.Name,
+            Email = TestConstants.IntegrationTests.SeededUsers.Email,
+            PasswordHash = PasswordHelper.HashPassword(
+                TestConstants.IntegrationTests.SeededUsers.Password
+            ),
+            PhoneNumber = TestConstants.IntegrationTests.SeededUsers.PhoneNumber,
+            ZipCode = TestConstants.IntegrationTests.SeededUsers.ZipCode,
+            State = TestConstants.IntegrationTests.SeededUsers.State,
+            City = TestConstants.IntegrationTests.SeededUsers.City,
+            Neighborhood = TestConstants.IntegrationTests.SeededUsers.Neighborhood,
+            Street = TestConstants.IntegrationTests.SeededUsers.Street,
+            StreetNumber = TestConstants.IntegrationTests.SeededUsers.StreetNumber,
         };
         context.Users.Add(testUser);
 
         // Create species
-        var dogSpecies = new Species { Name = "Cachorro" };
-        var catSpecies = new Species { Name = "Gato" };
+        var dogSpecies = new Species { Name = TestConstants.SpeciesAndBreeds.DogNamePt };
+        var catSpecies = new Species { Name = TestConstants.SpeciesAndBreeds.CatNamePt };
         context.Species.AddRange(dogSpecies, catSpecies);
 
         // Create breeds
-        var labrador = new Breed { Name = "Labrador", Species = dogSpecies };
-        var poodle = new Breed { Name = "Poodle", Species = dogSpecies };
-        var siamese = new Breed { Name = "Siamês", Species = catSpecies };
-        var persian = new Breed { Name = "Persa", Species = catSpecies };
+        var labrador = new Breed
+        {
+            Name = TestConstants.SpeciesAndBreeds.LabradorName,
+            Species = dogSpecies,
+        };
+        var poodle = new Breed
+        {
+            Name = TestConstants.SpeciesAndBreeds.PoodleName,
+            Species = dogSpecies,
+        };
+        var siamese = new Breed
+        {
+            Name = TestConstants.SpeciesAndBreeds.SiameseName,
+            Species = catSpecies,
+        };
+        var persian = new Breed
+        {
+            Name = TestConstants.SpeciesAndBreeds.PersianName,
+            Species = catSpecies,
+        };
         context.Breeds.AddRange(labrador, poodle, siamese, persian);
 
         // Create tags
-        var whiteTag = new Tag { Name = "Branco", Category = TagCategory.Color };
-        var blackTag = new Tag { Name = "Preto", Category = TagCategory.Color };
-        var brownTag = new Tag { Name = "Marrom", Category = TagCategory.Color };
-        var shortCoatTag = new Tag { Name = "Curto", Category = TagCategory.Coat };
-        var longCoatTag = new Tag { Name = "Longo", Category = TagCategory.Coat };
+        var whiteTag = new Tag
+        {
+            Name = TestConstants.IntegrationTests.SeededTags.White,
+            Category = TagCategory.Color,
+        };
+        var blackTag = new Tag
+        {
+            Name = TestConstants.IntegrationTests.SeededTags.Black,
+            Category = TagCategory.Color,
+        };
+        var brownTag = new Tag
+        {
+            Name = TestConstants.IntegrationTests.SeededTags.Brown,
+            Category = TagCategory.Color,
+        };
+        var shortCoatTag = new Tag
+        {
+            Name = TestConstants.IntegrationTests.SeededTags.ShortCoat,
+            Category = TagCategory.Coat,
+        };
+        var longCoatTag = new Tag
+        {
+            Name = TestConstants.IntegrationTests.SeededTags.LongCoat,
+            Category = TagCategory.Coat,
+        };
         context.Tags.AddRange(whiteTag, blackTag, brownTag, shortCoatTag, longCoatTag);
 
         await context.SaveChangesAsync();
@@ -64,7 +102,7 @@ public static class TestDataSeeder
         {
             new()
             {
-                Name = "Rex",
+                Name = TestConstants.IntegrationTests.PetNames.Rex,
                 Species = dogSpecies,
                 Breed = labrador,
                 Gender = PetGender.Male,
@@ -77,7 +115,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = "Luna",
+                Name = TestConstants.IntegrationTests.PetNames.Luna,
                 Species = catSpecies,
                 Breed = siamese,
                 Gender = PetGender.Female,
@@ -90,7 +128,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = "Max",
+                Name = TestConstants.IntegrationTests.PetNames.Max,
                 Species = dogSpecies,
                 Breed = poodle,
                 Gender = PetGender.Male,
@@ -107,7 +145,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = "Mia",
+                Name = TestConstants.IntegrationTests.PetNames.Mia,
                 Species = catSpecies,
                 Breed = persian,
                 Gender = PetGender.Female,
@@ -124,7 +162,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = "Bella",
+                Name = TestConstants.IntegrationTests.PetNames.Bella,
                 Species = dogSpecies,
                 Breed = labrador,
                 Gender = PetGender.Female,
@@ -142,7 +180,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = "Adopted Pet",
+                Name = TestConstants.IntegrationTests.PetNames.Thor,
                 Species = dogSpecies,
                 Breed = labrador,
                 Gender = PetGender.Male,

@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -46,10 +48,10 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     public async Task GetCurrentUser_WithValidToken_ReturnsUserProfile()
     {
         // Act
-        var response = await _client.GetAsync("/api/users/me");
+        var response = await _client.GetAsync(TestConstants.IntegrationTests.ApiPaths.UsersMe);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var apiResponse = await response.ReadApiResponseAsync<UserResponseDto>();
         apiResponse.Should().NotBeNull();
@@ -66,23 +68,31 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
         var clientWithoutAuth = _factory.CreateClient();
 
         // Act
-        var response = await clientWithoutAuth.GetAsync("/api/users/me");
+        var response = await clientWithoutAuth.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
     }
 
     [Fact]
     public async Task PatchCurrentUser_WithValidData_UpdatesUser()
     {
         // Arrange
-        var patchDto = new PatchUserDto { Name = "Updated Name", PhoneNumber = "11988776655" };
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
+            name: TestConstants.IntegrationTests.UserData.UpdatedName,
+            phoneNumber: TestConstants.IntegrationTests.UserData.UpdatedPhone
+        );
 
         // Act
-        var response = await _client.PatchAsJsonAsync("/api/users/me", patchDto);
+        var response = await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe,
+            patchDto
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var apiResponse = await response.ReadApiResponseAsync<object>();
         apiResponse.Should().NotBeNull();
@@ -90,7 +100,7 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
         apiResponse.Message.Should().Be("User updated successfully.");
 
         // Verify the update
-        var getResponse = await _client.GetAsync("/api/users/me");
+        var getResponse = await _client.GetAsync(TestConstants.IntegrationTests.ApiPaths.UsersMe);
         var userResponse = await getResponse.ReadApiResponseAsync<UserResponseDto>();
         userResponse!.Data!.Name.Should().Be("Updated Name");
         userResponse.Data.PhoneNumber.Should().Be("11988776655");
@@ -100,13 +110,16 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     public async Task PatchCurrentUser_UpdateEmail_RequiresReauth()
     {
         // Arrange
-        var patchDto = new PatchUserDto { Email = "newemail@example.com" };
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(email: "newemail@example.com");
 
         // Act
-        var response = await _client.PatchAsJsonAsync("/api/users/me", patchDto);
+        var response = await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe,
+            patchDto
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var apiResponse = await response.ReadApiResponseAsync<Dictionary<string, object>>();
         apiResponse.Should().NotBeNull();
@@ -122,13 +135,16 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     public async Task PatchCurrentUser_UpdatePassword_RequiresReauth()
     {
         // Arrange
-        var patchDto = new PatchUserDto { Password = "newpassword123" };
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(password: "newpassword123");
 
         // Act
-        var response = await _client.PatchAsJsonAsync("/api/users/me", patchDto);
+        var response = await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe,
+            patchDto
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var apiResponse = await response.ReadApiResponseAsync<object>();
         apiResponse.Should().NotBeNull();
@@ -143,25 +159,33 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     {
         // Arrange
         var clientWithoutAuth = _factory.CreateClient();
-        var patchDto = new PatchUserDto { Name = "Hacker Name" };
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(name: "Hacker Name");
 
         // Act
-        var response = await clientWithoutAuth.PatchAsJsonAsync("/api/users/me", patchDto);
+        var response = await clientWithoutAuth.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe,
+            patchDto
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
     }
 
     [Fact]
     public async Task PatchCurrentUser_WithInvalidEmail_ReturnsBadRequest()
     {
         // Arrange
-        var patchDto = new PatchUserDto { Email = "invalid-email" };
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
+            email: TestConstants.IntegrationTests.Emails.InvalidFormat
+        );
 
         // Act
-        var response = await _client.PatchAsJsonAsync("/api/users/me", patchDto);
+        var response = await _client.PatchAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe,
+            patchDto
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.ShouldBeBadRequest();
     }
 }

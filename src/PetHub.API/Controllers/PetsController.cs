@@ -176,7 +176,7 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         // Check ownership before update
         if (pet.UserId != userId)
         {
-            return Forbid("You don't have permission to update this pet.");
+            return ForbiddenResponse("You don't have permission to update this pet.");
         }
 
         // Update Pet
@@ -223,7 +223,7 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         // Check ownership
         if (pet.UserId != userId)
         {
-            return Forbid("You don't have permission to delete this pet.");
+            return ForbiddenResponse("You don't have permission to delete this pet.");
         }
 
         var success = await petRepository.DeleteAsync(id, userId);

@@ -1,11 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.Enums;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -15,101 +16,84 @@ namespace PetHub.Tests.IntegrationTests.Controllers.PetsControllerTests;
 /// Integration tests for the GetMyPets endpoint (GET /api/pets/me)
 /// Tests retrieving authenticated user's pets
 /// </summary>
-public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsyncLifetime
+public class GetMyPetsTests : IntegrationTestBase
 {
-    private readonly HttpClient _client;
-    private readonly PetHubWebApplicationFactory _factory;
     private string _userToken = string.Empty;
     private string _otherUserToken = string.Empty;
     private readonly List<int> _userPetIds = new();
 
     public GetMyPetsTests(PetHubWebApplicationFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-    }
+        : base(factory) { }
 
-    public async Task InitializeAsync()
+    public override async Task InitializeAsync()
     {
-        using var scope = _factory.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await dbContext.Database.EnsureDeletedAsync();
-        await dbContext.Database.EnsureCreatedAsync();
-        await TestDataSeeder.SeedTestData(dbContext);
+        await base.InitializeAsync();
 
         // Register user and create multiple test pets
-        _userToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            _client,
-            "mypetsuser@example.com"
-        );
-        _client.AddAuthToken(_userToken);
-
-        var species = dbContext.Species.First();
-        var breed = dbContext.Breeds.First(b => b.SpeciesId == species.Id);
+        _userToken = AuthToken;
 
         // Create 3 pets for the user
         for (int petIndex = 1; petIndex <= 3; petIndex++)
         {
-            var createDto = new CreatePetDto
-            {
-                Name = $"My Pet {petIndex}",
-                SpeciesId = species.Id,
-                BreedId = breed.Id,
-                Gender = PetGender.Male,
-                Size = PetSize.Medium,
-                AgeInMonths = 12 * petIndex,
-                ImageUrls = new List<string> { $"https://example.com/pet{petIndex}.jpg" },
-            };
+            var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
+                speciesId: DogSpeciesId,
+                breedId: FirstBreedId,
+                name: $"My Pet {petIndex}"
+            );
+            createDto.Gender = PetGender.Male;
+            createDto.Size = PetSize.Medium;
+            createDto.AgeInMonths = 12 * petIndex;
 
-            var response = await _client.PostAsJsonAsync("/api/pets", createDto);
+            var response = await Client.PostAsJsonAsync(
+                TestConstants.IntegrationTests.ApiPaths.Pets,
+                createDto
+            );
             var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
             _userPetIds.Add(createdPet!.Id);
         }
 
         // Register another user and create a pet for them
         _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            _client,
+            Client,
             "otherpetsuser@example.com"
         );
-        _client.AddAuthToken(_otherUserToken);
+        Client.AddAuthToken(_otherUserToken);
 
-        var otherPetDto = new CreatePetDto
-        {
-            Name = "Other User Pet",
-            SpeciesId = species.Id,
-            BreedId = breed.Id,
-            Gender = PetGender.Female,
-            Size = PetSize.Small,
-            AgeInMonths = 6,
-            ImageUrls = new List<string> { "https://example.com/other.jpg" },
-        };
+        var otherPetDto = TestConstants.DtoBuilders.CreateValidPetDto(
+            speciesId: DogSpeciesId,
+            breedId: FirstBreedId,
+            name: "Other User Pet"
+        );
+        otherPetDto.Gender = PetGender.Female;
+        otherPetDto.Size = PetSize.Small;
+        otherPetDto.AgeInMonths = 6;
 
-        await _client.PostAsJsonAsync("/api/pets", otherPetDto);
+        await Client.PostAsJsonAsync(TestConstants.IntegrationTests.ApiPaths.Pets, otherPetDto);
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GetMyPets_ReturnsOk()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
     }
 
     [Fact]
     public async Task GetMyPets_ReturnsOnlyUsersPets()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -123,13 +107,13 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     {
         // Arrange - Register a new user without pets
         var newUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            _client,
+            Client,
             "nopetsuser@example.com"
         );
-        _client.AddAuthToken(newUserToken);
+        Client.AddAuthToken(newUserToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -141,10 +125,10 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_DoesNotReturnOtherUsersPets()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -156,23 +140,25 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Arrange
-        var clientWithoutAuth = _factory.CreateClient();
+        var clientWithoutAuth = Factory.CreateClient();
 
         // Act
-        var response = await clientWithoutAuth.GetAsync("/api/pets/me");
+        var response = await clientWithoutAuth.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetsMe
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
     }
 
     [Fact]
     public async Task GetMyPets_ReturnsCompleteData()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -192,10 +178,10 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_ReturnsPetsOrderedByCreatedAt()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -213,17 +199,17 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_IncludesAdoptedPets()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Mark one pet as adopted
-        using var scope = _factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var pet = await dbContext.Pets.FindAsync(_userPetIds[0]);
         pet!.IsAdopted = true;
         await dbContext.SaveChangesAsync();
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -236,13 +222,13 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_AfterDeletingPet_ReturnsCorrectCount()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Delete one pet
-        await _client.DeleteAsync($"/api/pets/{_userPetIds[0]}");
+        await Client.DeleteAsync(TestConstants.IntegrationTests.ApiPaths.PetById(_userPetIds[0]));
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -255,12 +241,12 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_DifferentUsers_GetDifferentPets()
     {
         // Arrange & Act
-        _client.AddAuthToken(_userToken);
-        var userResponse = await _client.GetAsync("/api/pets/me");
+        Client.AddAuthToken(_userToken);
+        var userResponse = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
         var userPets = await userResponse.ReadApiResponseDataAsync<List<PetResponseDto>>();
 
-        _client.AddAuthToken(_otherUserToken);
-        var otherResponse = await _client.GetAsync("/api/pets/me");
+        Client.AddAuthToken(_otherUserToken);
+        var otherResponse = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
         var otherPets = await otherResponse.ReadApiResponseDataAsync<List<PetResponseDto>>();
 
         // Assert
@@ -274,10 +260,10 @@ public class GetMyPetsTests : IClassFixture<PetHubWebApplicationFactory>, IAsync
     public async Task GetMyPets_WithApiResponseWrapper()
     {
         // Arrange
-        _client.AddAuthToken(_userToken);
+        Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await _client.GetAsync("/api/pets/me");
+        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
 
         // Assert
         var apiResponse = await response.ReadApiResponseAsync<List<PetResponseDto>>();

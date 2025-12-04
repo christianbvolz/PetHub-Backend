@@ -9,6 +9,8 @@ using PetHub.API.DTOs.Pet;
 using PetHub.API.DTOs.User;
 using PetHub.API.Enums;
 using PetHub.API.Models;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -56,18 +58,19 @@ public class GetPetAdoptionRequestsTests
         var species = dbContext.Species.First();
         var breed = dbContext.Breeds.First(b => b.SpeciesId == species.Id);
 
-        var createDto = new CreatePetDto
-        {
-            Name = "Pet With Requests",
-            SpeciesId = species.Id,
-            BreedId = breed.Id,
-            Gender = PetGender.Male,
-            Size = PetSize.Medium,
-            AgeInMonths = 24,
-            ImageUrls = new List<string> { "https://example.com/pet.jpg" },
-        };
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
+            speciesId: species.Id,
+            breedId: breed.Id,
+            name: "Pet With Requests"
+        );
+        createDto.Gender = PetGender.Male;
+        createDto.Size = PetSize.Medium;
+        createDto.AgeInMonths = 24;
 
-        var response = await _client.PostAsJsonAsync("/api/pets", createDto);
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.Pets,
+            createDto
+        );
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         _testPetId = createdPet!.Id;
 
@@ -84,12 +87,16 @@ public class GetPetAdoptionRequestsTests
 
         // Get adopter IDs
         _client.AddAuthToken(_adopter1Token);
-        var adopter1Response = await _client.GetAsync("/api/users/me");
+        var adopter1Response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
         var adopter1 = await adopter1Response.ReadApiResponseDataAsync<UserResponseDto>();
         _adopter1Id = adopter1!.Id;
 
         _client.AddAuthToken(_adopter2Token);
-        var adopter2Response = await _client.GetAsync("/api/users/me");
+        var adopter2Response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
         var adopter2 = await adopter2Response.ReadApiResponseDataAsync<UserResponseDto>();
         _adopter2Id = adopter2!.Id;
 
@@ -129,10 +136,12 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{_testPetId}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(_testPetId)
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
     }
 
     [Fact]
@@ -142,7 +151,9 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{_testPetId}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(_testPetId)
+        );
 
         // Assert
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();
@@ -158,7 +169,9 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{_testPetId}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(_testPetId)
+        );
 
         // Assert
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();
@@ -182,10 +195,12 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_otherUserToken);
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{_testPetId}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(_testPetId)
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();
         requests.Should().NotBeNull();
         requests!.Should().BeEmpty(); // Returns empty list when not owner
@@ -203,7 +218,7 @@ public class GetPetAdoptionRequestsTests
         );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
     }
 
     [Fact]
@@ -213,10 +228,12 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await _client.GetAsync("/api/adoption/pets/99999/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(99999)
+        );
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();
         requests.Should().NotBeNull();
         requests!.Should().BeEmpty(); // Returns empty list when pet doesn't exist
@@ -240,11 +257,16 @@ public class GetPetAdoptionRequestsTests
             ImageUrls = new List<string> { "https://example.com/noreq.jpg" },
         };
 
-        var createResponse = await _client.PostAsJsonAsync("/api/pets", createDto);
+        var createResponse = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.Pets,
+            createDto
+        );
         var newPet = await createResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{newPet!.Id}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(newPet!.Id)
+        );
 
         // Assert
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();
@@ -274,7 +296,9 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{_testPetId}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(_testPetId)
+        );
 
         // Assert
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();
@@ -305,7 +329,9 @@ public class GetPetAdoptionRequestsTests
         _client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await _client.GetAsync($"/api/adoption/pets/{_testPetId}/requests");
+        var response = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.PetAdoptionRequests(_testPetId)
+        );
 
         // Assert
         var requests = await response.ReadApiResponseDataAsync<List<AdoptionRequestResponseDto>>();

@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
+using PetHub.Tests;
+using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
 namespace PetHub.Tests.IntegrationTests.Controllers.AuthControllerTests;
@@ -19,27 +21,15 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
     [Fact]
     public async Task Register_WithValidData_ReturnsCreatedAndToken()
     {
-        var registerDto = new CreateUserDto
-        {
-            Name = "Test User",
-            Email = "test@example.com",
-            Password = "password123",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
-        };
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(email: "test@example.com");
 
-        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponseDto>>();
-        apiResponse.Should().NotBeNull();
-        apiResponse!.Success.Should().BeTrue();
+        var apiResponse = await response.ShouldBeOk().WithContent<ApiResponse<LoginResponseDto>>();
+        apiResponse.Success.Should().BeTrue();
         apiResponse.Data.Should().NotBeNull();
         apiResponse.Data!.Token.Should().NotBeNullOrEmpty();
         apiResponse.Data.User.Should().NotBeNull();
@@ -50,72 +40,57 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
     [Fact]
     public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
     {
-        var registerDto = new CreateUserDto
-        {
-            Name = "First User",
-            Email = "duplicate@example.com",
-            Password = "password123",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
-        };
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            email: "duplicate@example.com",
+            name: "First User"
+        );
 
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
-        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("already registered");
+        await response.ShouldBeBadRequest().WithErrorMessage("already registered");
     }
 
     [Fact]
     public async Task Register_WithInvalidEmail_ReturnsBadRequest()
     {
-        var registerDto = new CreateUserDto
-        {
-            Name = "Test User",
-            Email = "invalid-email",
-            Password = "password123",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
-        };
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            email: TestConstants.IntegrationTests.Emails.InvalidFormat
+        );
 
         var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.ShouldBeBadRequest();
     }
 
     [Fact]
     public async Task Login_WithValidCredentials_ReturnsToken()
     {
-        var registerDto = new CreateUserDto
-        {
-            Name = "Login Test User",
-            Email = "login@example.com",
-            Password = "password123",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            email: TestConstants.IntegrationTests.Emails.Login,
+            password: TestConstants.IntegrationTests.UserData.DefaultPassword
+        );
+        await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
 
-        var loginDto = new LoginDto { Email = "login@example.com", Password = "password123" };
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+        var loginDto = TestConstants.DtoBuilders.CreateLoginDto(
+            email: TestConstants.IntegrationTests.Emails.Login,
+            password: TestConstants.IntegrationTests.UserData.DefaultPassword
+        );
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthLogin,
+            loginDto
+        );
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.ShouldBeOk();
 
         var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<LoginResponseDto>>();
         apiResponse.Should().NotBeNull();
@@ -128,11 +103,14 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
     [Fact]
     public async Task Login_WithInvalidEmail_ReturnsUnauthorized()
     {
-        var loginDto = new LoginDto { Email = "nonexistent@example.com", Password = "password123" };
+        var loginDto = TestConstants.DtoBuilders.CreateLoginDto(
+            email: TestConstants.IntegrationTests.Emails.Nonexistent,
+            password: TestConstants.IntegrationTests.UserData.DefaultPassword
+        );
 
         var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Invalid email or password");
     }
@@ -140,29 +118,25 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
     [Fact]
     public async Task Login_WithInvalidPassword_ReturnsUnauthorized()
     {
-        var registerDto = new CreateUserDto
-        {
-            Name = "Password Test User",
-            Email = "passwordtest@example.com",
-            Password = "correctpassword",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            email: "passwordtest@example.com",
+            password: "correctpassword"
+        );
+        await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
 
-        var loginDto = new LoginDto
-        {
-            Email = "passwordtest@example.com",
-            Password = "wrongpassword",
-        };
-        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+        var loginDto = TestConstants.DtoBuilders.CreateLoginDto(
+            email: "passwordtest@example.com",
+            password: "wrongpassword"
+        );
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthLogin,
+            loginDto
+        );
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.ShouldBeUnauthorized();
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Invalid email or password");
     }
@@ -170,23 +144,23 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
     [Fact]
     public async Task Login_TokenCanBeUsedForAuthentication()
     {
-        var registerDto = new CreateUserDto
-        {
-            Name = "Token Test User",
-            Email = "tokentest@example.com",
-            Password = "password123",
-            PhoneNumber = "11999887766",
-            ZipCode = "01310100",
-            State = "SP",
-            City = "São Paulo",
-            Neighborhood = "Centro",
-            Street = "Rua Teste",
-            StreetNumber = "123",
-        };
-        await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            email: "tokentest@example.com",
+            password: TestConstants.IntegrationTests.UserData.DefaultPassword
+        );
+        await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthRegister,
+            registerDto
+        );
 
-        var loginDto = new LoginDto { Email = "tokentest@example.com", Password = "password123" };
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+        var loginDto = TestConstants.DtoBuilders.CreateLoginDto(
+            email: "tokentest@example.com",
+            password: TestConstants.IntegrationTests.UserData.DefaultPassword
+        );
+        var loginResponse = await _client.PostAsJsonAsync(
+            TestConstants.IntegrationTests.ApiPaths.AuthLogin,
+            loginDto
+        );
         var apiResponse = await loginResponse.Content.ReadFromJsonAsync<
             ApiResponse<LoginResponseDto>
         >();
@@ -194,8 +168,10 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
 
         _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        var protectedResponse = await _client.GetAsync("/api/users/me");
+        var protectedResponse = await _client.GetAsync(
+            TestConstants.IntegrationTests.ApiPaths.UsersMe
+        );
 
-        protectedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        protectedResponse.ShouldBeOk();
     }
 }
