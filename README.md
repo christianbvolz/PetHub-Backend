@@ -3,7 +3,8 @@
 O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de estimação com donos ou abrigos que possuem animais para adoção. Este repositório contém o Backend (API) da aplicação, construído com tecnologias modernas do ecossistema .NET.
 
 [![CI](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-43%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-150%20passing-brightgreen)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-87.8%25-brightgreen)](tests/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -16,9 +17,10 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
 - **Tempo Real:** SignalR (Para o sistema de Chat)
 - **Segurança:** BCrypt (Hash de senhas)
 - **Documentação:** Swagger / OpenAPI (Swashbuckle 6.8.1)
-- **Testes:** xUnit + FluentAssertions (43 testes de integração)
+- **Testes:** xUnit + FluentAssertions (125 integration + 25 unit tests)
+- **Cobertura:** 87.8% de cobertura de código (Coverlet)
 - **Padrões:** Repository Pattern, DTOs, Dependency Injection
-- **CI/CD:** GitHub Actions
+- **CI/CD:** GitHub Actions com verificação de cobertura
 
 ## ✨ Funcionalidades Implementadas
 
@@ -481,6 +483,32 @@ export default async function PetsPage({ params, searchParams }) {
 - **Realtime:** SignalR Client (@microsoft/signalr)
 - **Forms:** React Hook Form + Zod
 - **Auth:** NextAuth.js v5 (integração JWT)
+
+## 🧪 Testes
+
+O projeto possui cobertura de **87.8%** com 150 testes:
+
+### Executar Testes
+```bash
+# Todos os testes
+dotnet test
+
+# Apenas testes unitários
+dotnet test --filter "FullyQualifiedName~PetHub.Tests.UnitTests"
+
+# Apenas testes de integração
+dotnet test --filter "FullyQualifiedName~PetHub.Tests.IntegrationTests"
+
+# Com cobertura de código
+dotnet test --collect:"XPlat Code Coverage" --results-directory:"./TestResults"
+
+# Gerar relatório HTML
+reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"TestResults/coveragereport" -reporttypes:Html
+```
+
+### Estrutura de Testes
+- **Integration Tests (125):** Testes de API end-to-end
+- **Unit Tests (25):** Testes de lógica isolada (PasswordHelper, etc.)
 
 ## 🤝 Contribuindo
 

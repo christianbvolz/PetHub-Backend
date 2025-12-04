@@ -50,6 +50,23 @@ jobs:
         targetdir: 'coveragereport'
         reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub'
 
+    - name: Check coverage threshold
+      run: |
+        # Extract line coverage percentage from Cobertura XML
+        COVERAGE=$(grep -oP 'line-rate="\K[0-9.]+' coveragereport/Cobertura.xml | head -1)
+        COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc)
+        echo "Current coverage: ${COVERAGE_PERCENT}%"
+        
+        # Set minimum threshold (80%)
+        THRESHOLD=80
+        
+        if (( $(echo "$COVERAGE_PERCENT < $THRESHOLD" | bc -l) )); then
+          echo "::error::Code coverage ${COVERAGE_PERCENT}% is below the threshold of ${THRESHOLD}%"
+          exit 1
+        else
+          echo "::notice::Code coverage ${COVERAGE_PERCENT}% meets the threshold of ${THRESHOLD}%"
+        fi
+
     - name: Upload coverage to artifacts
       uses: actions/upload-artifact@v4
       with:
