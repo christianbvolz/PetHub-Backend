@@ -15,6 +15,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Tag> Tags { get; set; }
     public DbSet<PetTag> PetTags { get; set; }
 
+    // Authentication
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+
     // Adoption Tables
     public DbSet<AdoptionRequest> AdoptionRequests { get; set; }
 
@@ -153,5 +156,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Metadata.SetAfterSaveBehavior(
                 Microsoft.EntityFrameworkCore.Metadata.PropertySaveBehavior.Ignore
             );
+
+        // RefreshToken configuration
+        modelBuilder
+            .Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure RefreshToken.UserId to use the same char(36) + utf8mb4 collation as User.Id
+        modelBuilder
+            .Entity<RefreshToken>()
+            .Property(rt => rt.UserId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
     }
 }

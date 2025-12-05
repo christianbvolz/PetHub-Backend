@@ -9,8 +9,11 @@ namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(IUserRepository userRepository, IJwtService jwtService)
-    : ApiControllerBase
+public class AuthController(
+    IUserRepository userRepository,
+    IJwtService jwtService,
+    IRefreshTokenService refreshTokenService
+) : ApiControllerBase
 {
     /// <summary>
     /// Registers a new user in the system
@@ -29,7 +32,24 @@ public class AuthController(IUserRepository userRepository, IJwtService jwtServi
             var user = await userRepository.CreateAsync(dto);
             var token = jwtService.GenerateToken(user.Id, user.Email);
 
-            var loginResponse = new LoginResponseDto { Token = token, User = user.ToResponseDto() };
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var refresh = await refreshTokenService.CreateAsync(user.Id, ipAddress);
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(14),
+                Secure = true, // Only send over HTTPS
+                SameSite = SameSiteMode.Lax // Or Strict, depending on your needs
+            };
+            Response.Cookies.Append("refreshToken", refresh, cookieOptions);
+
+            var loginResponse = new LoginResponseDto
+            {
+                Token = token,
+                User = user.ToResponseDto(),
+                RefreshToken = null, // Do not send refresh token in the body
+            };
 
             return Success(loginResponse);
         }
@@ -59,8 +79,113 @@ public class AuthController(IUserRepository userRepository, IJwtService jwtServi
         }
 
         var token = jwtService.GenerateToken(user.Id, user.Email);
-        var loginResponse = new LoginResponseDto { Token = token, User = user.ToResponseDto() };
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var refresh = await refreshTokenService.CreateAsync(user.Id, ipAddress);
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Expires = DateTime.UtcNow.AddDays(14),
+            Secure = true,
+            SameSite = SameSiteMode.Lax
+        };
+        Response.Cookies.Append("refreshToken", refresh, cookieOptions);
+
+        var loginResponse = new LoginResponseDto
+        {
+            Token = token,
+            User = user.ToResponseDto(),
+            RefreshToken = null,
+        };
 
         return Success(loginResponse);
+    }
+
+    /// <summary>
+    /// Refreshes a user's session using a refresh token.
+    /// </summary>
+    /// <param name="dto">The refresh token DTO. If the token is not in the body, it's read from the `refreshToken` cookie.</param>
+    /// <returns>A new JWT token and user data.</returns>
+    /// <response code="200">Token refreshed successfully.</response>
+    /// <response code="400">Invalid or expired refresh token.</response>
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Refresh(RefreshRequestDto? dto)
+    {
+        try
+        {
+            var incoming = dto?.RefreshToken ?? Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(incoming))
+            {
+                return Error("Refresh token is required.");
+            }
+
+            var existing = await refreshTokenService.GetByTokenAsync(incoming);
+            if (existing == null || existing.User == null)
+            {
+                return Error("Invalid token.");
+            }
+
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var newRefresh = await refreshTokenService.RotateAsync(incoming, ipAddress);
+            var newAccess = jwtService.GenerateToken(existing.User.Id, existing.User.Email);
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(14),
+                Secure = true,
+                SameSite = SameSiteMode.Lax
+            };
+            Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);
+
+            var loginResponse = new LoginResponseDto
+            {
+                Token = newAccess,
+                User = existing.User.ToResponseDto(),
+                RefreshToken = null,
+            };
+
+            return Success(loginResponse);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Error(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Revokes a refresh token, logging the user out from that session.
+    /// </summary>
+    /// <param name="dto">The refresh token DTO. If the token is not in the body, it's read from the `refreshToken` cookie.</param>
+    /// <returns>A success message.</returns>
+    /// <response code="200">Token revoked successfully.</response>
+    /// <response code="400">Invalid refresh token.</response>
+    [HttpPost("revoke")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<string>>> Revoke(RevokeRequestDto? dto)
+    {
+        var incoming = dto?.RefreshToken ?? Request.Cookies["refreshToken"];
+        if (string.IsNullOrEmpty(incoming))
+        {
+            return Error("Refresh token is required.");
+        }
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ok = await refreshTokenService.RevokeAsync(incoming, ipAddress);
+
+        if (!ok)
+        {
+            return Error("Token not found or already revoked.");
+        }
+
+        // Also delete the cookie from the client
+        var deleteOptions = new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax };
+        Response.Cookies.Delete("refreshToken", deleteOptions);
+
+        return Success("Token revoked successfully.");
     }
 }

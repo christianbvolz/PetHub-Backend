@@ -52,4 +52,7 @@ public class User
 
     [JsonIgnore]
     public List<Pet> Pets { get; set; } = [];
+
+    [JsonIgnore]
+    public List<RefreshToken> RefreshTokens { get; set; } = new();
 }

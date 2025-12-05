@@ -1,0 +1,36 @@
+using System.Security.Cryptography;
+
+namespace PetHub.API.Utils;
+
+public static class TokenHelper
+{
+    /// <summary>
+    /// Generates a cryptographically secure random token.
+    /// </summary>
+    /// <param name="length">The desired length of the token in bytes.</param>
+    /// <returns>A URL-safe, base64-encoded random string.</returns>
+    public static string GenerateSecureToken(int length = 32)
+    {
+        var randomNumber = new byte[length];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    /// <summary>
+    /// Computes the SHA256 hash of a string.
+    /// </summary>
+    /// <param name="input">The string to hash.</param>
+    /// <returns>The SHA256 hash as a hex string.</returns>
+    public static string ComputeSha256Hash(string input)
+    {
+        using var sha256 = SHA256.Create();
+        var bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+        var builder = new System.Text.StringBuilder();
+        foreach (var b in bytes)
+        {
+            builder.Append(b.ToString("x2"));
+        }
+        return builder.ToString();
+    }
+}
