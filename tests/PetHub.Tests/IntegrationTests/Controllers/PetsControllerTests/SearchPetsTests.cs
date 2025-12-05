@@ -25,7 +25,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_WithoutFilters_ReturnsAllAvailablePets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?page=1&pageSize=10";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?page=1&pageSize=10";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -49,7 +49,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_WithPagination_ReturnsCorrectPage()
     {
         // Arrange
-        var requestUri = "/api/pets/search?page=1&pageSize=2";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?page=1&pageSize=2";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -71,7 +71,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterBySpecies_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?species=Dog";
+        var requestUri =
+            $"{TestConstants.ApiPaths.PetsSearch}?species={TestConstants.SpeciesAndBreeds.DogName}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -83,7 +84,9 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Rex, Max and Bella (dogs only)
-        result.Items.Should().OnlyContain(p => p.SpeciesName == "Dog");
+        result
+            .Items.Should()
+            .OnlyContain(p => p.SpeciesName == TestConstants.SpeciesAndBreeds.DogName);
         result.TotalCount.Should().Be(3);
     }
 
@@ -91,7 +94,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByGender_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?gender=Female";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?gender={PetGender.Female}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -111,7 +114,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterBySize_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?size=Large";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?size={PetSize.Large}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -131,7 +134,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByBreed_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?breed=Labrador";
+        var requestUri =
+            $"{TestConstants.ApiPaths.PetsSearch}?breed={TestConstants.SpeciesAndBreeds.LabradorName}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -143,7 +147,9 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(2); // Rex and Bella
-        result.Items.Should().OnlyContain(p => p.BreedName == "Labrador");
+        result
+            .Items.Should()
+            .OnlyContain(p => p.BreedName == TestConstants.SpeciesAndBreeds.LabradorName);
         result.TotalCount.Should().Be(2);
     }
 
@@ -151,7 +157,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByColor_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?colors=White";
+        var requestUri =
+            $"{TestConstants.ApiPaths.PetsSearch}?colors={TestConstants.Tags.WhiteName}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -163,7 +170,9 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Luna, Mia and Bella (white pets)
-        result.Items.Should().OnlyContain(p => p.Tags.Any(t => t.Name == "White"));
+        result
+            .Items.Should()
+            .OnlyContain(p => p.Tags.Any(t => t.Name == TestConstants.Tags.WhiteName));
         result.TotalCount.Should().Be(3);
     }
 
@@ -171,7 +180,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByMultipleColors_ReturnsOnlyPetsWithAllColors()
     {
         // Arrange - search for pets that have BOTH colors (White AND Black)
-        var requestUri = "/api/pets/search?colors=White,Black";
+        var requestUri =
+            $"{TestConstants.ApiPaths.PetsSearch}?colors={TestConstants.Tags.WhiteName},{TestConstants.Tags.BlackName}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -183,9 +193,9 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(1); // Only Bella (has both white AND black)
-        result.Items.First().Name.Should().Be("Bella");
-        result.Items.First().Tags.Should().Contain(t => t.Name == "White");
-        result.Items.First().Tags.Should().Contain(t => t.Name == "Black");
+        result.Items.First().Name.Should().Be(TestConstants.Pets.Bella);
+        result.Items.First().Tags.Should().Contain(t => t.Name == TestConstants.Tags.WhiteName);
+        result.Items.First().Tags.Should().Contain(t => t.Name == TestConstants.Tags.BlackName);
         result.TotalCount.Should().Be(1);
     }
 
@@ -193,7 +203,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByCoat_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?coat=Long Coat";
+        var requestUri =
+            $"{TestConstants.ApiPaths.PetsSearch}?coat={TestConstants.Tags.LongCoatName}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -205,7 +216,9 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(2); // Max and Mia (long coat)
-        result.Items.Should().OnlyContain(p => p.Tags.Any(t => t.Name == "Long Coat"));
+        result
+            .Items.Should()
+            .OnlyContain(p => p.Tags.Any(t => t.Name == TestConstants.Tags.LongCoatName));
         result.TotalCount.Should().Be(2);
     }
 
@@ -213,7 +226,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_CombinedFilters_ReturnsCorrectResults()
     {
         // Arrange
-        var requestUri = "/api/pets/search?species=Dog&size=Large";
+        var requestUri =
+            $"{TestConstants.ApiPaths.PetsSearch}?species={TestConstants.SpeciesAndBreeds.DogName}&size={PetSize.Large}";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -225,7 +239,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(1); // Only Rex (large dog)
-        result.Items.First().Name.Should().Be("Rex");
+        result.Items.First().Name.Should().Be(TestConstants.Pets.Rex);
         result.TotalCount.Should().Be(1);
     }
 
@@ -233,7 +247,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_NoMatchingResults_ReturnsEmptyList()
     {
         // Arrange
-        var requestUri = "/api/pets/search?species=Papagaio";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?species=Papagaio";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -252,7 +266,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_InvalidPageNumber_ReturnsEmptyList()
     {
         // Arrange
-        var requestUri = "/api/pets/search?page=999&pageSize=10";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?page=999&pageSize=10";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -270,7 +284,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_ResponseStructure_IsCorrect()
     {
         // Arrange
-        var requestUri = "/api/pets/search?page=1&pageSize=1";
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?page=1&pageSize=1";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -299,7 +313,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_ExcludesAdoptedPets_ByDefault()
     {
         // Arrange
-        var requestUri = "/api/pets/search";
+        var requestUri = TestConstants.ApiPaths.PetsSearch;
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -309,9 +323,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
 
         var result = await response.ReadApiResponseDataAsync<PagedResult<PetResponseDto>>();
         result.Should().NotBeNull();
-        result!
-            .Items.Should()
-            .NotContain(p => p.Name == TestConstants.Pets.Thor);
+        result!.Items.Should().NotContain(p => p.Name == TestConstants.Pets.Thor);
         result.Items.Should().OnlyContain(p => !p.IsAdopted);
     }
 }

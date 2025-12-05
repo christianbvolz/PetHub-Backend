@@ -31,27 +31,16 @@ public class DeletePetTests : IntegrationTestBase
         // Register owner and create a test pet
         _ownerToken = AuthToken;
 
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: TestConstants.Pets.Rex
-        );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
+
         _testPetId = createdPet!.Id;
 
         // Register another user for ownership tests
-        _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            Client,
-            "deleteother@example.com"
-        );
+        // Register another user for ownership tests — helper will generate a unique email
+        _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(Client);
     }
 
     public override Task DisposeAsync() => Task.CompletedTask;
@@ -63,9 +52,7 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var response = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert
         response.ShouldBeOk();
@@ -78,15 +65,11 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act
-        var deleteResponse = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var deleteResponse = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
         deleteResponse.ShouldBeOk();
 
         // Verify pet is deleted
-        var getResponse = await Client.GetAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var getResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert
         getResponse.ShouldBeNotFound();
@@ -99,9 +82,7 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act
-        var response = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var response = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert
         var apiResponse = await response.ReadApiResponseAsync<object>();
@@ -118,7 +99,7 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(99999)
+            TestConstants.ApiPaths.PetById(TestConstants.NonExistentIds.Generic)
         );
 
         // Assert
@@ -134,9 +115,7 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_otherUserToken); // Different user
 
         // Act
-        var response = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var response = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert
         response.ShouldBeForbidden();
@@ -166,28 +145,16 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Create another pet for the same owner
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: TestConstants.Pets.Luna
-        );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Small;
-        createDto.AgeInMonths = 12;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(name: TestConstants.Pets.Luna);
 
-        var createResponse = await Client.PostAsJsonAsync(
-            TestConstants.ApiPaths.Pets,
-            createDto
-        );
+        var createResponse = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var secondPet = await createResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Act - Delete first pet
         await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert - Second pet still exists
-        var getResponse = await Client.GetAsync(
-            TestConstants.ApiPaths.PetById(secondPet!.Id)
-        );
+        var getResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(secondPet!.Id));
         getResponse.ShouldBeOk();
     }
 
@@ -198,15 +165,11 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act - Delete once
-        var firstDelete = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var firstDelete = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
         firstDelete.ShouldBeOk();
 
         // Try to delete again
-        var secondDelete = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var secondDelete = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert
         secondDelete.ShouldBeNotFound();
@@ -219,16 +182,12 @@ public class DeletePetTests : IntegrationTestBase
         Client.AddAuthToken(_otherUserToken);
 
         // Act
-        var deleteResponse = await Client.DeleteAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var deleteResponse = await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
         deleteResponse.ShouldBeForbidden();
 
         // Verify pet still exists
         Client.AddAuthToken(_ownerToken);
-        var getResponse = await Client.GetAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var getResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert
         getResponse.ShouldBeOk();

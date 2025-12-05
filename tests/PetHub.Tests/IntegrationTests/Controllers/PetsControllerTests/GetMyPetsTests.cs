@@ -21,6 +21,7 @@ public class GetMyPetsTests : IntegrationTestBase
     private string _userToken = string.Empty;
     private string _otherUserToken = string.Empty;
     private readonly List<int> _userPetIds = new();
+    private string _otherPetName = string.Empty;
 
     public GetMyPetsTests(PetHubWebApplicationFactory factory)
         : base(factory) { }
@@ -36,37 +37,21 @@ public class GetMyPetsTests : IntegrationTestBase
         for (int petIndex = 1; petIndex <= 3; petIndex++)
         {
             var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-                speciesId: DogSpeciesId,
-                breedId: FirstBreedId,
-                name: $"My Pet {petIndex}"
+                name: $"{TestConstants.Pets.Rex} {petIndex}"
             );
-            createDto.Gender = PetGender.Male;
-            createDto.Size = PetSize.Medium;
-            createDto.AgeInMonths = 12 * petIndex;
 
-            var response = await Client.PostAsJsonAsync(
-                TestConstants.ApiPaths.Pets,
-                createDto
-            );
+            var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
             var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
             _userPetIds.Add(createdPet!.Id);
         }
 
         // Register another user and create a pet for them
-        _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            Client,
-            "otherpetsuser@example.com"
-        );
+        // Register other user (helper generates unique email) and create their pet
+        _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(Client);
         Client.AddAuthToken(_otherUserToken);
 
-        var otherPetDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "Other User Pet"
-        );
-        otherPetDto.Gender = PetGender.Female;
-        otherPetDto.Size = PetSize.Small;
-        otherPetDto.AgeInMonths = 6;
+        _otherPetName = TestConstants.Pets.Luna;
+        var otherPetDto = TestConstants.DtoBuilders.CreateValidPetDto(name: _otherPetName);
 
         await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, otherPetDto);
     }
@@ -106,10 +91,7 @@ public class GetMyPetsTests : IntegrationTestBase
     public async Task GetMyPets_ReturnsEmptyListWhenUserHasNoPets()
     {
         // Arrange - Register a new user without pets
-        var newUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            Client,
-            "nopetsuser@example.com"
-        );
+        var newUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(Client);
         Client.AddAuthToken(newUserToken);
 
         // Act
@@ -133,7 +115,7 @@ public class GetMyPetsTests : IntegrationTestBase
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
         pets.Should().NotBeNull();
-        pets!.Should().NotContain(p => p.Name == "Other User Pet");
+        pets!.Should().NotContain(p => p.Name == _otherPetName);
     }
 
     [Fact]
@@ -143,9 +125,7 @@ public class GetMyPetsTests : IntegrationTestBase
         var clientWithoutAuth = Factory.CreateClient();
 
         // Act
-        var response = await clientWithoutAuth.GetAsync(
-            TestConstants.ApiPaths.PetsMe
-        );
+        var response = await clientWithoutAuth.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         response.ShouldBeUnauthorized();
@@ -252,8 +232,8 @@ public class GetMyPetsTests : IntegrationTestBase
         // Assert
         userPets!.Should().HaveCount(3);
         otherPets!.Should().HaveCount(1);
-        userPets.Should().NotContain(p => p.Name == "Other User Pet");
-        otherPets.Should().Contain(p => p.Name == "Other User Pet");
+        userPets.Should().NotContain(p => p.Name == _otherPetName);
+        otherPets.Should().Contain(p => p.Name == _otherPetName);
     }
 
     [Fact]

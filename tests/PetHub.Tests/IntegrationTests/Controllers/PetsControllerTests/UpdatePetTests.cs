@@ -32,31 +32,14 @@ public class UpdatePetTests : IntegrationTestBase
         // Register owner and create a test pet
         _ownerToken = AuthToken;
 
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0] },
-            name: "Original Pet",
-            description: "Original description"
-        );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
-        createDto.IsCastrated = false;
-        createDto.IsVaccinated = false;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         _testPetId = createdPet!.Id;
 
         // Register another user for ownership tests
-        _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
-            Client,
-            "otheruser@example.com"
-        );
+        _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(Client);
     }
 
     public override Task DisposeAsync() => Task.CompletedTask;
@@ -67,7 +50,6 @@ public class UpdatePetTests : IntegrationTestBase
         // Arrange
         Client.AddAuthToken(_ownerToken);
         var updateDto = TestConstants.DtoBuilders.CreateValidUpdatePetDto(
-            name: "Updated Pet Name",
             description: TestConstants.Pets.UpdatedDescription
         );
 
@@ -86,7 +68,7 @@ public class UpdatePetTests : IntegrationTestBase
     {
         // Arrange
         Client.AddAuthToken(_ownerToken);
-        var updateDto = new UpdatePetDto { Name = "New Name Only" };
+        var updateDto = new UpdatePetDto { Name = TestConstants.Pets.Max };
 
         // Act
         var response = await Client.PatchAsJsonAsync(
@@ -97,8 +79,8 @@ public class UpdatePetTests : IntegrationTestBase
         // Assert
         var updatedPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         updatedPet.Should().NotBeNull();
-        updatedPet!.Name.Should().Be("New Name Only");
-        updatedPet.Description.Should().Be("Original description"); // Unchanged
+        updatedPet!.Name.Should().Be(TestConstants.Pets.Max);
+        updatedPet.Description.Should().Be(TestConstants.Pets.DefaultDescription); // Unchanged
         updatedPet.Gender.Should().Be(PetGender.Male); // Unchanged
     }
 
@@ -108,8 +90,8 @@ public class UpdatePetTests : IntegrationTestBase
         // Arrange
         Client.AddAuthToken(_ownerToken);
         var updateDto = TestConstants.DtoBuilders.CreateValidUpdatePetDto(
-            name: "Completely Updated",
-            description: "New description"
+            name: TestConstants.Pets.Max,
+            description: TestConstants.Pets.UpdatedDescription
         );
 
         // Act
@@ -121,8 +103,8 @@ public class UpdatePetTests : IntegrationTestBase
         // Assert
         var updatedPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         updatedPet.Should().NotBeNull();
-        updatedPet!.Name.Should().Be("Completely Updated");
-        updatedPet.Description.Should().Be("New description");
+        updatedPet!.Name.Should().Be(TestConstants.Pets.Max);
+        updatedPet.Description.Should().Be(TestConstants.Pets.UpdatedDescription);
         updatedPet.Gender.Should().Be(PetGender.Female);
         updatedPet.Size.Should().Be(PetSize.Large);
         updatedPet.AgeInMonths.Should().Be(36);
@@ -164,7 +146,7 @@ public class UpdatePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
         var updateDto = new UpdatePetDto
         {
-            BreedId = 99999, // Non-existent breed
+            BreedId = TestConstants.NonExistentIds.Generic, // Non-existent breed
         };
 
         // Act
@@ -234,7 +216,7 @@ public class UpdatePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
         var updateDto = new UpdatePetDto
         {
-            TagIds = new List<int> { TagIds[0], 99999 },
+            TagIds = new List<int> { TagIds[0], TestConstants.NonExistentIds.Generic },
         };
 
         // Act
@@ -285,7 +267,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.ApiPaths.PetById(99999),
+            TestConstants.ApiPaths.PetById(TestConstants.NonExistentIds.Generic),
             updateDto
         );
 
@@ -321,7 +303,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await clientWithoutAuth.PatchAsJsonAsync(
-            $"/api/pets/{_testPetId}",
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -348,7 +330,7 @@ public class UpdatePetTests : IntegrationTestBase
         // Assert
         var updatedPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         updatedPet.Should().NotBeNull();
-        updatedPet!.Name.Should().Be("Original Pet"); // Name unchanged
+        updatedPet!.Name.Should().Be(TestConstants.Pets.Rex); // Name unchanged
     }
 
     [Fact]
@@ -367,7 +349,7 @@ public class UpdatePetTests : IntegrationTestBase
         // Assert
         var updatedPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         updatedPet.Should().NotBeNull();
-        updatedPet!.Description.Should().Be("Original description"); // Description unchanged
+        updatedPet!.Description.Should().Be(TestConstants.Pets.DefaultDescription); // Description unchanged
     }
 
     [Fact]
@@ -375,7 +357,7 @@ public class UpdatePetTests : IntegrationTestBase
     {
         // Arrange
         Client.AddAuthToken(_ownerToken);
-        var updateDto = new UpdatePetDto { Name = "Check Relationships" };
+        var updateDto = new UpdatePetDto { Name = TestConstants.Pets.Mia };
 
         // Act
         var response = await Client.PatchAsJsonAsync(
@@ -400,13 +382,11 @@ public class UpdatePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Get original IsAdopted status
-        var getResponse = await Client.GetAsync(
-            TestConstants.ApiPaths.PetById(_testPetId)
-        );
+        var getResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(_testPetId));
         var originalPet = await getResponse.ReadApiResponseDataAsync<PetResponseDto>();
         var originalIsAdopted = originalPet!.IsAdopted;
 
-        var updateDto = new UpdatePetDto { Name = "Updated Name" };
+        var updateDto = new UpdatePetDto { Name = TestConstants.Pets.Mia };
 
         // Act
         var response = await Client.PatchAsJsonAsync(

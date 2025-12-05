@@ -25,11 +25,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_WithValidData_ReturnsCreated()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0], TagIds[1] }
-        );
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -42,16 +38,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_WithValidData_ReturnsCreatedPet()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0] },
-            description: TestConstants.Pets.ShortDescription
-        );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Small;
-        createDto.AgeInMonths = 12;
-        createDto.IsCastrated = false;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -75,16 +62,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_ReturnsLocationHeader()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "Location Test Pet",
-            description: "Testing location header"
-        );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Large;
-        createDto.AgeInMonths = 36;
-        createDto.TagIds = new List<int>();
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -92,23 +70,18 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         // Assert
         response.ShouldBeCreated();
         response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.ToString().Should().Contain("/api/Pets/");
+        response
+            .Headers.Location!.ToString()
+            .ToLowerInvariant()
+            .Should()
+            .Contain(TestConstants.ApiPaths.Pets + "/");
     }
 
     [Fact]
     public async Task CreatePet_CreatedPetCanBeRetrieved()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0] },
-            name: "Retrievable Pet",
-            description: "Can be retrieved after creation"
-        );
-        createDto.Gender = PetGender.Unknown;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 18;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var createResponse = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -130,13 +103,9 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: 99999, // Non-existent species
-            breedId: FirstBreedId,
-            name: "Invalid Species Pet"
+            speciesId: TestConstants.NonExistentIds.Generic, // Non-existent species
+            breedId: FirstBreedId
         );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -154,13 +123,8 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: 99999, // Non-existent breed
-            name: "Invalid Breed Pet"
+            breedId: TestConstants.NonExistentIds.Generic // Non-existent breed
         );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Small;
-        createDto.AgeInMonths = 12;
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -187,12 +151,8 @@ public class CreatePetIntegrationTests : IntegrationTestBase
 
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
             speciesId: species1.Id,
-            breedId: breedFromSpecies2.Id, // Breed from different species
-            name: "Mismatched Breed Pet"
+            breedId: breedFromSpecies2.Id // Breed from different species
         );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -212,14 +172,8 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0], 99999 }, // One valid, one invalid
-            name: "Invalid Tags Pet"
+            tagIds: new List<int> { TagIds[0], TestConstants.NonExistentIds.Generic } // One valid, one invalid
         );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Large;
-        createDto.AgeInMonths = 36;
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -229,20 +183,19 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         var apiResponse = await response.ReadApiResponseAsync<object>();
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeFalse();
-        apiResponse.Errors.Should().Contain(e => e.Contains("tag") && e.Contains("99999"));
+        apiResponse
+            .Errors.Should()
+            .Contain(e =>
+                e.Contains("tag") && e.Contains(TestConstants.NonExistentIds.Generic.ToString())
+            );
     }
 
     [Fact]
     public async Task CreatePet_WithoutName_IsValid()
     {
         // Arrange - Name is optional (nullable)
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId
-        );
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
         createDto.Name = null; // Explicitly set to null
-        createDto.Gender = PetGender.Unknown;
-        createDto.AgeInMonths = 0; // Unknown age
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -258,14 +211,8 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_WithMultipleImages_SavesAllImages()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: TestConstants.Pets.Max
-        );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Small;
-        createDto.AgeInMonths = 6;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
+
         createDto.ImageUrls = TestConstants.ImageUrls.MultipleImages();
 
         // Act
@@ -289,15 +236,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var allTagIds = dbContext.Tags.Select(t => t.Id).ToList();
 
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: allTagIds,
-            name: TestConstants.Pets.Mia
-        );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Large;
-        createDto.AgeInMonths = 48;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(tagIds: allTagIds);
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -313,15 +252,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_WithNoTags_IsValid()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "No Tags Pet"
-        );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
-        createDto.TagIds = new List<int>(); // No tags
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -337,14 +268,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_DefaultsToNotAdopted()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "Not Adopted Pet"
-        );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -360,14 +284,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     public async Task CreatePet_AssignsToAuthenticatedUser()
     {
         // Arrange
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "User Assignment Test"
-        );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Small;
-        createDto.AgeInMonths = 12;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -387,14 +304,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var beforeCreation = DateTime.UtcNow.AddSeconds(-5);
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "Timestamp Test Pet"
-        );
-        createDto.Gender = PetGender.Female;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 18;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -413,13 +323,8 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange - Age 0 means unknown/estimated
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            name: "Unknown Age Pet"
+            ageInMonths: 0 // Unknown age
         );
-        createDto.Gender = PetGender.Unknown;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 0; // Unknown age
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -436,17 +341,8 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0], TagIds[1] },
-            name: "Full Relationships Pet",
-            description: "Testing all relationships"
+            tagIds: new List<int> { TagIds[0], TagIds[1] }
         );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Large;
-        createDto.AgeInMonths = 36;
-        createDto.IsCastrated = true;
-        createDto.IsVaccinated = true;
 
         // Act
         var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
@@ -476,16 +372,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var clientWithoutAuth = Factory.CreateClient(); // New client without token
-        var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
-            speciesId: DogSpeciesId,
-            breedId: FirstBreedId,
-            tagIds: new List<int> { TagIds[0] },
-            name: "Unauthorized Test",
-            description: "Should fail without auth"
-        );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 12;
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
         // Act
         var response = await clientWithoutAuth.PostAsJsonAsync(

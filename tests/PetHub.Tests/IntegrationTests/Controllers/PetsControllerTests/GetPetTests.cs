@@ -203,11 +203,8 @@ public class GetPetIntegrationTests : IntegrationTestBase
         using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var rexId =
-            (
-                await dbContext.Pets.FirstOrDefaultAsync(p =>
-                    p.Name == TestConstants.Pets.Rex
-                )
-            )?.Id ?? 0;
+            (await dbContext.Pets.FirstOrDefaultAsync(p => p.Name == TestConstants.Pets.Rex))?.Id
+            ?? 0;
 
         var requestUri = TestConstants.ApiPaths.PetById(rexId);
 
@@ -233,11 +230,8 @@ public class GetPetIntegrationTests : IntegrationTestBase
         using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var adoptedPetId =
-            (
-                await dbContext.Pets.FirstOrDefaultAsync(p =>
-                    p.Name == TestConstants.Pets.Thor
-                )
-            )?.Id ?? 0;
+            (await dbContext.Pets.FirstOrDefaultAsync(p => p.Name == TestConstants.Pets.Thor))?.Id
+            ?? 0;
 
         var requestUri = TestConstants.ApiPaths.PetById(adoptedPetId);
 
