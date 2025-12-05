@@ -32,8 +32,8 @@ public class RefreshTokenService(AppDbContext dbContext) : IRefreshTokenService
     public async Task<RefreshToken?> GetByTokenAsync(string tokenPlain)
     {
         var hash = TokenHelper.ComputeSha256Hash(tokenPlain);
-        return await _db.RefreshTokens
-            .Include(rt => rt.User)
+        return await _db
+            .RefreshTokens.Include(rt => rt.User)
             .FirstOrDefaultAsync(rt => rt.TokenHash == hash);
     }
 

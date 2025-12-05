@@ -15,7 +15,8 @@ public static class TokenHelper
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         // Use URL-safe Base64 encoding (replace + with -, / with _, and remove padding =)
-        return Convert.ToBase64String(randomNumber)
+        return Convert
+            .ToBase64String(randomNumber)
             .Replace('+', '-')
             .Replace('/', '_')
             .TrimEnd('=');

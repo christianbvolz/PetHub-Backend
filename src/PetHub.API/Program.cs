@@ -188,6 +188,9 @@ builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
 builder.Services.AddSingleton<IJwtService, JwtService>(); // Singleton: stateless service, thread-safe
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
+// Background Services
+builder.Services.AddHostedService<RefreshTokenCleanupService>();
+
 // ==================================================================
 // 3. MIDDLEWARE PIPELINE
 // ==================================================================

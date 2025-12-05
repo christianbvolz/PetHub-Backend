@@ -69,19 +69,20 @@ public class RefreshTokenTests : IClassFixture<PetHubWebApplicationFactory>
             email: "refresh2@test.com",
             password: TestConstants.Passwords.ValidPassword
         );
-        var loginResponse = await _client.PostAsJsonAsync(TestConstants.ApiPaths.AuthLogin, loginDto);
+        var loginResponse = await _client.PostAsJsonAsync(
+            TestConstants.ApiPaths.AuthLogin,
+            loginDto
+        );
         loginResponse.ShouldBeOk();
 
         // Extract refresh token from cookie
         var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
-        var refreshTokenCookie = cookies
-            .First(c => c.Contains("refreshToken="))
-            .Split(';')[0];
+        var refreshTokenCookie = cookies.First(c => c.Contains("refreshToken=")).Split(';')[0];
         refreshTokenCookie.Should().NotBeNullOrEmpty();
 
         // Act: Use refresh token to get new access token via body (cookie simulation in tests)
         var tokenValue = refreshTokenCookie.Split('=')[1];
-        
+
         var refreshDto = new RefreshRequestDto { RefreshToken = tokenValue };
         var refreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", refreshDto);
 
@@ -115,7 +116,10 @@ public class RefreshTokenTests : IClassFixture<PetHubWebApplicationFactory>
             email: "refresh3@test.com",
             password: TestConstants.Passwords.ValidPassword
         );
-        var loginResponse = await _client.PostAsJsonAsync(TestConstants.ApiPaths.AuthLogin, loginDto);
+        var loginResponse = await _client.PostAsJsonAsync(
+            TestConstants.ApiPaths.AuthLogin,
+            loginDto
+        );
 
         // Extract refresh token
         var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
@@ -126,12 +130,18 @@ public class RefreshTokenTests : IClassFixture<PetHubWebApplicationFactory>
 
         // Act: Refresh once (this should work and rotate the token)
         var firstRefreshDto = new RefreshRequestDto { RefreshToken = oldRefreshToken };
-        var firstRefreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", firstRefreshDto);
+        var firstRefreshResponse = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            firstRefreshDto
+        );
         firstRefreshResponse.ShouldBeOk();
 
         // Act: Try to reuse the old refresh token (this should fail and revoke all tokens)
         var secondRefreshDto = new RefreshRequestDto { RefreshToken = oldRefreshToken };
-        var secondRefreshResponse = await _client.PostAsJsonAsync("/api/auth/refresh", secondRefreshDto);
+        var secondRefreshResponse = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            secondRefreshDto
+        );
 
         // Assert: Should fail with error
         await secondRefreshResponse.ShouldBeBadRequest().WithErrorMessage("invalidated");
@@ -176,11 +186,16 @@ public class RefreshTokenTests : IClassFixture<PetHubWebApplicationFactory>
             email: "revoke@test.com",
             password: TestConstants.Passwords.ValidPassword
         );
-        var loginResponse = await _client.PostAsJsonAsync(TestConstants.ApiPaths.AuthLogin, loginDto);
+        var loginResponse = await _client.PostAsJsonAsync(
+            TestConstants.ApiPaths.AuthLogin,
+            loginDto
+        );
 
         // Extract refresh token
         var cookies = loginResponse.Headers.GetValues("Set-Cookie").ToList();
-        var refreshToken = cookies.First(c => c.Contains("refreshToken=")).Split(';')[0].Split('=')[1];
+        var refreshToken = cookies.First(c => c.Contains("refreshToken=")).Split(';')[0].Split('=')[
+            1
+        ];
 
         // Act: Revoke the token
         var revokeDto = new RevokeRequestDto { RefreshToken = refreshToken };
