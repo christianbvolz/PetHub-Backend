@@ -40,7 +40,7 @@ public class AuthController(
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(14),
                 Secure = true, // Only send over HTTPS
-                SameSite = SameSiteMode.Lax // Or Strict, depending on your needs
+                SameSite = SameSiteMode.Lax, // Or Strict, depending on your needs
             };
             Response.Cookies.Append("refreshToken", refresh, cookieOptions);
 
@@ -88,7 +88,7 @@ public class AuthController(
             HttpOnly = true,
             Expires = DateTime.UtcNow.AddDays(14),
             Secure = true,
-            SameSite = SameSiteMode.Lax
+            SameSite = SameSiteMode.Lax,
         };
         Response.Cookies.Append("refreshToken", refresh, cookieOptions);
 
@@ -137,7 +137,7 @@ public class AuthController(
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(14),
                 Secure = true,
-                SameSite = SameSiteMode.Lax
+                SameSite = SameSiteMode.Lax,
             };
             Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);
 
@@ -183,7 +183,12 @@ public class AuthController(
         }
 
         // Also delete the cookie from the client
-        var deleteOptions = new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax };
+        var deleteOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+        };
         Response.Cookies.Delete("refreshToken", deleteOptions);
 
         return Success("Token revoked successfully.");

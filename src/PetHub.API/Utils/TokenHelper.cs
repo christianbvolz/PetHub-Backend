@@ -14,7 +14,11 @@ public static class TokenHelper
         var randomNumber = new byte[length];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+        // Use URL-safe Base64 encoding (replace + with -, / with _, and remove padding =)
+        return Convert.ToBase64String(randomNumber)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
     }
 
     /// <summary>

@@ -32,7 +32,9 @@ public class RefreshTokenService(AppDbContext dbContext) : IRefreshTokenService
     public async Task<RefreshToken?> GetByTokenAsync(string tokenPlain)
     {
         var hash = TokenHelper.ComputeSha256Hash(tokenPlain);
-        return await _db.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hash);
+        return await _db.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.TokenHash == hash);
     }
 
     public async Task<string> RotateAsync(string tokenPlain, string? ipAddress)
