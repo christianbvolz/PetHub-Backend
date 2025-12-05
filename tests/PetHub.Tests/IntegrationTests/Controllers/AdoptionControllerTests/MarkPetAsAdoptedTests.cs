@@ -36,23 +36,17 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
             speciesId: DogSpeciesId,
             breedId: FirstBreedId,
-            name: TestConstants.IntegrationTests.PetNames.Bella
+            name: TestConstants.Pets.Bella
         );
-        createDto.Gender = PetGender.Male;
-        createDto.Size = PetSize.Medium;
-        createDto.AgeInMonths = 24;
 
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         _testPetId = createdPet!.Id;
 
         // Register another user for ownership tests
         _otherUserToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
             Client,
-            "markother@example.com"
+            TestConstants.Users.AnotherEmail
         );
     }
 
@@ -66,7 +60,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Act
         var response = await Client.PostAsJsonAsync(
-            $"/api/adoption/pets/{_testPetId}/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId),
             new { }
         );
 
@@ -81,15 +75,10 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act
-        await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.MarkPetAsAdopted(_testPetId),
-            new { }
-        );
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId), new { });
 
         // Verify pet is marked as adopted
-        var petResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
-        );
+        var petResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(_testPetId));
         var pet = await petResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Assert
@@ -104,24 +93,20 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         // Create real adopter users
         var adopter1Token = await AuthenticationHelper.RegisterAndGetTokenAsync(
             Client,
-            "markadopter1@example.com"
+            TestConstants.Users.GenerateUniqueEmail()
         );
         var adopter2Token = await AuthenticationHelper.RegisterAndGetTokenAsync(
             Client,
-            "markadopter2@example.com"
+            TestConstants.Users.GenerateUniqueEmail()
         );
 
         Client.AddAuthToken(adopter1Token);
-        var adopter1Response = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe
-        );
+        var adopter1Response = await Client.GetAsync(TestConstants.ApiPaths.UsersMe);
         var adopter1 =
             await adopter1Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
 
         Client.AddAuthToken(adopter2Token);
-        var adopter2Response = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe
-        );
+        var adopter2Response = await Client.GetAsync(TestConstants.ApiPaths.UsersMe);
         var adopter2 =
             await adopter2Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
 
@@ -159,10 +144,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act
-        await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.MarkPetAsAdopted(_testPetId),
-            new { }
-        );
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId), new { });
 
         // Verify all requests are rejected in a new scope
         using (var scope = Factory.Services.CreateScope())
@@ -185,7 +167,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Act
         var response = await Client.PostAsJsonAsync(
-            "/api/adoption/pets/99999/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(9999),
             new { }
         );
 
@@ -203,7 +185,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Act
         var response = await Client.PostAsJsonAsync(
-            $"/api/adoption/pets/{_testPetId}/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId),
             new { }
         );
 
@@ -221,7 +203,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Act
         var response = await clientWithoutAuth.PostAsJsonAsync(
-            $"/api/adoption/pets/{_testPetId}/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId),
             new { }
         );
 
@@ -237,7 +219,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Act
         var response = await Client.PostAsJsonAsync(
-            $"/api/adoption/pets/{_testPetId}/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId),
             new { }
         );
 
@@ -256,16 +238,14 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Act
         var response = await Client.PostAsJsonAsync(
-            $"/api/adoption/pets/{_testPetId}/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId),
             new { }
         );
 
         // Assert
         response.ShouldBeOk();
 
-        var petResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
-        );
+        var petResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(_testPetId));
         var pet = await petResponse.ReadApiResponseDataAsync<PetResponseDto>();
         pet!.IsAdopted.Should().BeTrue();
     }
@@ -277,14 +257,11 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Mark pet as adopted first time
-        await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.MarkPetAsAdopted(_testPetId),
-            new { }
-        );
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId), new { });
 
         // Act - Try to mark again
         var response = await Client.PostAsJsonAsync(
-            $"/api/adoption/pets/{_testPetId}/mark-adopted",
+            TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId),
             new { }
         );
 
@@ -299,33 +276,16 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Create another pet
-        var createDto = new CreatePetDto
-        {
-            Name = "Other Pet",
-            SpeciesId = 1,
-            BreedId = 1,
-            Gender = PetGender.Female,
-            Size = PetSize.Small,
-            AgeInMonths = 12,
-            ImageUrls = new List<string> { "https://example.com/other.jpg" },
-        };
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
-        var petResponse = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var petResponse = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var otherPet = await petResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Act - Mark first pet as adopted
-        await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.MarkPetAsAdopted(_testPetId),
-            new { }
-        );
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId), new { });
 
         // Assert - Other pet should not be adopted
-        var otherPetResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(otherPet!.Id)
-        );
+        var otherPetResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(otherPet!.Id));
         var otherPetData = await otherPetResponse.ReadApiResponseDataAsync<PetResponseDto>();
         otherPetData!.IsAdopted.Should().BeFalse();
     }
@@ -339,21 +299,9 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         // Create another pet with a pending request
         Client.AddAuthToken(_ownerToken);
-        var createDto = new CreatePetDto
-        {
-            Name = "Other Pet",
-            SpeciesId = 1,
-            BreedId = 1,
-            Gender = PetGender.Female,
-            Size = PetSize.Small,
-            AgeInMonths = 12,
-            ImageUrls = new List<string> { "https://example.com/other.jpg" },
-        };
+        var createDto = TestConstants.DtoBuilders.CreateValidPetDto();
 
-        var petResponse = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var petResponse = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var otherPet = await petResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         var otherPetRequest = new AdoptionRequest
@@ -368,10 +316,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         await dbContext.SaveChangesAsync();
 
         // Act - Mark first pet as adopted
-        await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.MarkPetAsAdopted(_testPetId),
-            new { }
-        );
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId), new { });
 
         // Assert - Other pet's request should still be pending
         var otherRequestAfter = await dbContext.AdoptionRequests.FindAsync(otherPetRequest.Id);
@@ -385,10 +330,7 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
 
         // Act
-        await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.MarkPetAsAdopted(_testPetId),
-            new { }
-        );
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.MarkPetAsAdopted(_testPetId), new { });
 
         // Assert - No approved request should exist (adoption was external)
         using var scope = Factory.Services.CreateScope();

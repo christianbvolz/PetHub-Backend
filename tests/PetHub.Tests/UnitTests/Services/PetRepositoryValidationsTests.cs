@@ -53,7 +53,7 @@ public class PetRepositoryValidationsTests : IDisposable
     {
         // Act
         var result = await _repository.ValidateSpeciesExistsAsync(
-            TestConstants.SpeciesAndBreeds.NonExistentSpeciesId
+            TestConstants.NonExistentIds.Generic
         );
 
         // Assert
@@ -115,7 +115,7 @@ public class PetRepositoryValidationsTests : IDisposable
 
         // Act
         var result = await _repository.ValidateBreedBelongsToSpeciesAsync(
-            breedId: TestConstants.SpeciesAndBreeds.NonExistentBreedId,
+            breedId: TestConstants.NonExistentIds.Generic,
             speciesId: TestConstants.SpeciesAndBreeds.DogSpeciesId
         );
 
@@ -134,7 +134,7 @@ public class PetRepositoryValidationsTests : IDisposable
         // Act
         var result = await _repository.ValidateBreedBelongsToSpeciesAsync(
             breedId: TestConstants.SpeciesAndBreeds.LabradorBreedId,
-            speciesId: TestConstants.SpeciesAndBreeds.NonExistentSpeciesId
+            speciesId: TestConstants.NonExistentIds.Generic
         );
 
         // Assert
@@ -177,14 +177,14 @@ public class PetRepositoryValidationsTests : IDisposable
         var invalidTagIds = await _repository.ValidateTagsExistAsync([
             TestConstants.Tags.BlackTagId,
             TestConstants.Tags.WhiteTagId,
-            TestConstants.Tags.NonExistentTagId1,
-            TestConstants.Tags.NonExistentTagId2,
+            TestConstants.NonExistentIds.Generic,
+            TestConstants.NonExistentIds.Alternative1,
         ]);
 
         // Assert
         invalidTagIds.Should().HaveCount(2);
-        invalidTagIds.Should().Contain(TestConstants.Tags.NonExistentTagId1);
-        invalidTagIds.Should().Contain(TestConstants.Tags.NonExistentTagId2);
+        invalidTagIds.Should().Contain(TestConstants.NonExistentIds.Generic);
+        invalidTagIds.Should().Contain(TestConstants.NonExistentIds.Alternative1);
     }
 
     [Fact]
@@ -192,16 +192,16 @@ public class PetRepositoryValidationsTests : IDisposable
     {
         // Act
         var invalidTagIds = await _repository.ValidateTagsExistAsync([
-            TestConstants.Tags.NonExistentTagId1,
-            TestConstants.Tags.NonExistentTagId2,
-            TestConstants.Tags.NonExistentTagId3,
+            TestConstants.NonExistentIds.Generic,
+            TestConstants.NonExistentIds.Alternative1,
+            TestConstants.NonExistentIds.Alternative2,
         ]);
 
         // Assert
         invalidTagIds.Should().HaveCount(3);
-        invalidTagIds.Should().Contain(TestConstants.Tags.NonExistentTagId1);
-        invalidTagIds.Should().Contain(TestConstants.Tags.NonExistentTagId2);
-        invalidTagIds.Should().Contain(TestConstants.Tags.NonExistentTagId3);
+        invalidTagIds.Should().Contain(TestConstants.NonExistentIds.Generic);
+        invalidTagIds.Should().Contain(TestConstants.NonExistentIds.Alternative1);
+        invalidTagIds.Should().Contain(TestConstants.NonExistentIds.Alternative2);
     }
 
     [Fact]
@@ -226,13 +226,13 @@ public class PetRepositoryValidationsTests : IDisposable
         var invalidTagIds = await _repository.ValidateTagsExistAsync([
             TestConstants.Tags.BlackTagId,
             TestConstants.Tags.BlackTagId,
-            TestConstants.Tags.NonExistentTagId1,
-            TestConstants.Tags.NonExistentTagId1,
+            TestConstants.NonExistentIds.Generic,
+            TestConstants.NonExistentIds.Generic,
         ]);
 
         // Assert - Method should return deduplicated invalid IDs
         invalidTagIds.Should().HaveCount(1);
-        invalidTagIds.Should().OnlyContain(id => id == TestConstants.Tags.NonExistentTagId1);
+        invalidTagIds.Should().OnlyContain(id => id == TestConstants.NonExistentIds.Generic);
     }
 
     #endregion

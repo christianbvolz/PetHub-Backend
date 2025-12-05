@@ -45,7 +45,7 @@ public class GetMyPetsTests : IntegrationTestBase
             createDto.AgeInMonths = 12 * petIndex;
 
             var response = await Client.PostAsJsonAsync(
-                TestConstants.IntegrationTests.ApiPaths.Pets,
+                TestConstants.ApiPaths.Pets,
                 createDto
             );
             var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
@@ -68,7 +68,7 @@ public class GetMyPetsTests : IntegrationTestBase
         otherPetDto.Size = PetSize.Small;
         otherPetDto.AgeInMonths = 6;
 
-        await Client.PostAsJsonAsync(TestConstants.IntegrationTests.ApiPaths.Pets, otherPetDto);
+        await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, otherPetDto);
     }
 
     public override Task DisposeAsync() => Task.CompletedTask;
@@ -80,7 +80,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         response.ShouldBeOk();
@@ -93,7 +93,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -113,7 +113,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(newUserToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -128,7 +128,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -144,7 +144,7 @@ public class GetMyPetsTests : IntegrationTestBase
 
         // Act
         var response = await clientWithoutAuth.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetsMe
+            TestConstants.ApiPaths.PetsMe
         );
 
         // Assert
@@ -158,7 +158,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -181,7 +181,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -209,7 +209,7 @@ public class GetMyPetsTests : IntegrationTestBase
         await dbContext.SaveChangesAsync();
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -225,10 +225,10 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Delete one pet
-        await Client.DeleteAsync(TestConstants.IntegrationTests.ApiPaths.PetById(_userPetIds[0]));
+        await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_userPetIds[0]));
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var pets = await response.ReadApiResponseDataAsync<List<PetResponseDto>>();
@@ -242,11 +242,11 @@ public class GetMyPetsTests : IntegrationTestBase
     {
         // Arrange & Act
         Client.AddAuthToken(_userToken);
-        var userResponse = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var userResponse = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
         var userPets = await userResponse.ReadApiResponseDataAsync<List<PetResponseDto>>();
 
         Client.AddAuthToken(_otherUserToken);
-        var otherResponse = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var otherResponse = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
         var otherPets = await otherResponse.ReadApiResponseDataAsync<List<PetResponseDto>>();
 
         // Assert
@@ -263,7 +263,7 @@ public class GetMyPetsTests : IntegrationTestBase
         Client.AddAuthToken(_userToken);
 
         // Act
-        var response = await Client.GetAsync(TestConstants.IntegrationTests.ApiPaths.PetsMe);
+        var response = await Client.GetAsync(TestConstants.ApiPaths.PetsMe);
 
         // Assert
         var apiResponse = await response.ReadApiResponseAsync<List<PetResponseDto>>();

@@ -34,14 +34,14 @@ public class DeletePetTests : IntegrationTestBase
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
             speciesId: DogSpeciesId,
             breedId: FirstBreedId,
-            name: TestConstants.IntegrationTests.PetNames.Rex
+            name: TestConstants.Pets.Rex
         );
         createDto.Gender = PetGender.Male;
         createDto.Size = PetSize.Medium;
         createDto.AgeInMonths = 24;
 
         var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
+            TestConstants.ApiPaths.Pets,
             createDto
         );
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
@@ -64,7 +64,7 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert
@@ -79,13 +79,13 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var deleteResponse = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
         deleteResponse.ShouldBeOk();
 
         // Verify pet is deleted
         var getResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert
@@ -100,7 +100,7 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert
@@ -118,7 +118,7 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(99999)
+            TestConstants.ApiPaths.PetById(99999)
         );
 
         // Assert
@@ -135,7 +135,7 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert
@@ -152,7 +152,7 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var response = await clientWithoutAuth.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert
@@ -169,24 +169,24 @@ public class DeletePetTests : IntegrationTestBase
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
             speciesId: DogSpeciesId,
             breedId: FirstBreedId,
-            name: TestConstants.IntegrationTests.PetNames.Luna
+            name: TestConstants.Pets.Luna
         );
         createDto.Gender = PetGender.Female;
         createDto.Size = PetSize.Small;
         createDto.AgeInMonths = 12;
 
         var createResponse = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
+            TestConstants.ApiPaths.Pets,
             createDto
         );
         var secondPet = await createResponse.ReadApiResponseDataAsync<PetResponseDto>();
 
         // Act - Delete first pet
-        await Client.DeleteAsync(TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId));
+        await Client.DeleteAsync(TestConstants.ApiPaths.PetById(_testPetId));
 
         // Assert - Second pet still exists
         var getResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(secondPet!.Id)
+            TestConstants.ApiPaths.PetById(secondPet!.Id)
         );
         getResponse.ShouldBeOk();
     }
@@ -199,13 +199,13 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act - Delete once
         var firstDelete = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
         firstDelete.ShouldBeOk();
 
         // Try to delete again
         var secondDelete = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert
@@ -220,14 +220,14 @@ public class DeletePetTests : IntegrationTestBase
 
         // Act
         var deleteResponse = await Client.DeleteAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
         deleteResponse.ShouldBeForbidden();
 
         // Verify pet still exists
         Client.AddAuthToken(_ownerToken);
         var getResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
 
         // Assert

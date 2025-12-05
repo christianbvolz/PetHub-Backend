@@ -37,7 +37,7 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
 
         _authToken = await AuthenticationHelper.RegisterAndGetTokenAsync(
             _client,
-            "userstest@example.com"
+            TestConstants.Users.Email
         );
         _client.AddAuthToken(_authToken);
     }
@@ -48,7 +48,7 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     public async Task GetCurrentUser_WithValidToken_ReturnsUserProfile()
     {
         // Act
-        var response = await _client.GetAsync(TestConstants.IntegrationTests.ApiPaths.UsersMe);
+        var response = await _client.GetAsync(TestConstants.ApiPaths.UsersMe);
 
         // Assert
         response.ShouldBeOk();
@@ -57,8 +57,8 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data.Should().NotBeNull();
-        apiResponse.Data!.Email.Should().Be("userstest@example.com");
-        apiResponse.Data.Name.Should().Be("Test User");
+        apiResponse.Data!.Email.Should().Be(TestConstants.Users.Email);
+        apiResponse.Data.Name.Should().Be(TestConstants.Users.Username);
     }
 
     [Fact]
@@ -68,9 +68,7 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
         var clientWithoutAuth = _factory.CreateClient();
 
         // Act
-        var response = await clientWithoutAuth.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe
-        );
+        var response = await clientWithoutAuth.GetAsync(TestConstants.ApiPaths.UsersMe);
 
         // Assert
         response.ShouldBeUnauthorized();
@@ -81,15 +79,12 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     {
         // Arrange
         var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
-            name: TestConstants.IntegrationTests.UserData.UpdatedName,
-            phoneNumber: TestConstants.IntegrationTests.UserData.UpdatedPhone
+            name: TestConstants.Users.UpdatedName,
+            phoneNumber: TestConstants.Users.UpdatedPhone
         );
 
         // Act
-        var response = await _client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe,
-            patchDto
-        );
+        var response = await _client.PatchAsJsonAsync(TestConstants.ApiPaths.UsersMe, patchDto);
 
         // Assert
         response.ShouldBeOk();
@@ -100,23 +95,22 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
         apiResponse.Message.Should().Be("User updated successfully.");
 
         // Verify the update
-        var getResponse = await _client.GetAsync(TestConstants.IntegrationTests.ApiPaths.UsersMe);
+        var getResponse = await _client.GetAsync(TestConstants.ApiPaths.UsersMe);
         var userResponse = await getResponse.ReadApiResponseAsync<UserResponseDto>();
-        userResponse!.Data!.Name.Should().Be("Updated Name");
-        userResponse.Data.PhoneNumber.Should().Be("11988776655");
+        userResponse!.Data!.Name.Should().Be(TestConstants.Users.UpdatedName);
+        userResponse.Data.PhoneNumber.Should().Be(TestConstants.Users.UpdatedPhone);
     }
 
     [Fact]
     public async Task PatchCurrentUser_UpdateEmail_RequiresReauth()
     {
         // Arrange
-        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(email: "newemail@example.com");
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
+            email: TestConstants.Users.AnotherEmail
+        );
 
         // Act
-        var response = await _client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe,
-            patchDto
-        );
+        var response = await _client.PatchAsJsonAsync(TestConstants.ApiPaths.UsersMe, patchDto);
 
         // Assert
         response.ShouldBeOk();
@@ -135,13 +129,12 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     public async Task PatchCurrentUser_UpdatePassword_RequiresReauth()
     {
         // Arrange
-        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(password: "newpassword123");
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
+            password: TestConstants.Passwords.AnotherValidPassword
+        );
 
         // Act
-        var response = await _client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe,
-            patchDto
-        );
+        var response = await _client.PatchAsJsonAsync(TestConstants.ApiPaths.UsersMe, patchDto);
 
         // Assert
         response.ShouldBeOk();
@@ -159,11 +152,13 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     {
         // Arrange
         var clientWithoutAuth = _factory.CreateClient();
-        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(name: "Hacker Name");
+        var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
+            name: TestConstants.Users.Username
+        );
 
         // Act
         var response = await clientWithoutAuth.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe,
+            TestConstants.ApiPaths.UsersMe,
             patchDto
         );
 
@@ -176,14 +171,11 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     {
         // Arrange
         var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
-            email: TestConstants.IntegrationTests.Emails.InvalidFormat
+            email: TestConstants.Users.InvalidEmail
         );
 
         // Act
-        var response = await _client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.UsersMe,
-            patchDto
-        );
+        var response = await _client.PatchAsJsonAsync(TestConstants.ApiPaths.UsersMe, patchDto);
 
         // Assert
         response.ShouldBeBadRequest();

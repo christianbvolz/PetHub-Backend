@@ -24,24 +24,22 @@ public static class TestDataSeeder
         var testUser = new User
         {
             Id = UuidHelper.NewId(),
-            Name = TestConstants.IntegrationTests.SeededUsers.Name,
-            Email = TestConstants.IntegrationTests.SeededUsers.Email,
-            PasswordHash = PasswordHelper.HashPassword(
-                TestConstants.IntegrationTests.SeededUsers.Password
-            ),
-            PhoneNumber = TestConstants.IntegrationTests.SeededUsers.PhoneNumber,
-            ZipCode = TestConstants.IntegrationTests.SeededUsers.ZipCode,
-            State = TestConstants.IntegrationTests.SeededUsers.State,
-            City = TestConstants.IntegrationTests.SeededUsers.City,
-            Neighborhood = TestConstants.IntegrationTests.SeededUsers.Neighborhood,
-            Street = TestConstants.IntegrationTests.SeededUsers.Street,
-            StreetNumber = TestConstants.IntegrationTests.SeededUsers.StreetNumber,
+            Name = TestConstants.Users.Username,
+            Email = TestConstants.Users.Email,
+            PasswordHash = PasswordHelper.HashPassword(TestConstants.Passwords.ValidPassword),
+            PhoneNumber = TestConstants.Users.PhoneNumber,
+            ZipCode = TestConstants.Users.ZipCode,
+            State = TestConstants.Users.State,
+            City = TestConstants.Users.City,
+            Neighborhood = TestConstants.Users.Neighborhood,
+            Street = TestConstants.Users.Street,
+            StreetNumber = TestConstants.Users.StreetNumber,
         };
         context.Users.Add(testUser);
 
         // Create species
-        var dogSpecies = new Species { Name = TestConstants.SpeciesAndBreeds.DogNamePt };
-        var catSpecies = new Species { Name = TestConstants.SpeciesAndBreeds.CatNamePt };
+        var dogSpecies = new Species { Name = TestConstants.SpeciesAndBreeds.DogName };
+        var catSpecies = new Species { Name = TestConstants.SpeciesAndBreeds.CatName };
         context.Species.AddRange(dogSpecies, catSpecies);
 
         // Create breeds
@@ -70,27 +68,27 @@ public static class TestDataSeeder
         // Create tags
         var whiteTag = new Tag
         {
-            Name = TestConstants.IntegrationTests.SeededTags.White,
+            Name = TestConstants.Tags.WhiteName,
             Category = TagCategory.Color,
         };
         var blackTag = new Tag
         {
-            Name = TestConstants.IntegrationTests.SeededTags.Black,
+            Name = TestConstants.Tags.BlackName,
             Category = TagCategory.Color,
         };
         var brownTag = new Tag
         {
-            Name = TestConstants.IntegrationTests.SeededTags.Brown,
+            Name = TestConstants.Tags.BrownName,
             Category = TagCategory.Color,
         };
         var shortCoatTag = new Tag
         {
-            Name = TestConstants.IntegrationTests.SeededTags.ShortCoat,
+            Name = TestConstants.Tags.ShortCoatName,
             Category = TagCategory.Coat,
         };
         var longCoatTag = new Tag
         {
-            Name = TestConstants.IntegrationTests.SeededTags.LongCoat,
+            Name = TestConstants.Tags.LongCoatName,
             Category = TagCategory.Coat,
         };
         context.Tags.AddRange(whiteTag, blackTag, brownTag, shortCoatTag, longCoatTag);
@@ -102,7 +100,7 @@ public static class TestDataSeeder
         {
             new()
             {
-                Name = TestConstants.IntegrationTests.PetNames.Rex,
+                Name = TestConstants.Pets.Rex,
                 Species = dogSpecies,
                 Breed = labrador,
                 Gender = PetGender.Male,
@@ -115,7 +113,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = TestConstants.IntegrationTests.PetNames.Luna,
+                Name = TestConstants.Pets.Luna,
                 Species = catSpecies,
                 Breed = siamese,
                 Gender = PetGender.Female,
@@ -128,7 +126,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = TestConstants.IntegrationTests.PetNames.Max,
+                Name = TestConstants.Pets.Max,
                 Species = dogSpecies,
                 Breed = poodle,
                 Gender = PetGender.Male,
@@ -145,7 +143,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = TestConstants.IntegrationTests.PetNames.Mia,
+                Name = TestConstants.Pets.Mia,
                 Species = catSpecies,
                 Breed = persian,
                 Gender = PetGender.Female,
@@ -162,7 +160,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = TestConstants.IntegrationTests.PetNames.Bella,
+                Name = TestConstants.Pets.Bella,
                 Species = dogSpecies,
                 Breed = labrador,
                 Gender = PetGender.Female,
@@ -180,7 +178,7 @@ public static class TestDataSeeder
             },
             new()
             {
-                Name = TestConstants.IntegrationTests.PetNames.Thor,
+                Name = TestConstants.Pets.Thor,
                 Species = dogSpecies,
                 Breed = labrador,
                 Gender = PetGender.Male,

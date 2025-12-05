@@ -70,8 +70,12 @@ public abstract class IntegrationTestBase(PetHubWebApplicationFactory factory)
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Load species IDs
-        var dogSpecies = await dbContext.Species.FirstOrDefaultAsync(s => s.Name == "Cachorro");
-        var catSpecies = await dbContext.Species.FirstOrDefaultAsync(s => s.Name == "Gato");
+        var dogSpecies = await dbContext.Species.FirstOrDefaultAsync(s =>
+            s.Name == TestConstants.SpeciesAndBreeds.DogName
+        );
+        var catSpecies = await dbContext.Species.FirstOrDefaultAsync(s =>
+            s.Name == TestConstants.SpeciesAndBreeds.CatName
+        );
 
         DogSpeciesId = dogSpecies?.Id ?? 0;
         CatSpeciesId = catSpecies?.Id ?? 0;
@@ -99,7 +103,7 @@ public abstract class IntegrationTestBase(PetHubWebApplicationFactory factory)
     /// </summary>
     protected virtual async Task AuthenticateTestUser(string? email = null)
     {
-        email ??= TestConstants.IntegrationTests.Emails.GenerateUnique();
+        email ??= TestConstants.Users.GenerateUniqueEmail();
         AuthToken = await AuthenticationHelper.RegisterAndGetTokenAsync(Client, email);
         Client.AddAuthToken(AuthToken);
     }

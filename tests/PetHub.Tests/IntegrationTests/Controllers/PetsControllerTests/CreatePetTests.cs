@@ -32,10 +32,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         );
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -49,7 +46,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
             speciesId: DogSpeciesId,
             breedId: FirstBreedId,
             tagIds: new List<int> { TagIds[0] },
-            description: TestConstants.IntegrationTests.Descriptions.Short
+            description: TestConstants.Pets.ShortDescription
         );
         createDto.Gender = PetGender.Female;
         createDto.Size = PetSize.Small;
@@ -57,10 +54,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.IsCastrated = false;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -93,10 +87,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.TagIds = new List<int>();
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -120,16 +111,11 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 18;
 
         // Act
-        var createResponse = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var createResponse = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         createResponse.ShouldBeCreated();
 
         var createdPet = await createResponse.ReadApiResponseDataAsync<PetResponseDto>();
-        var getResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(createdPet!.Id)
-        );
+        var getResponse = await Client.GetAsync(TestConstants.ApiPaths.PetById(createdPet!.Id));
 
         // Assert
         getResponse.ShouldBeOk();
@@ -153,10 +139,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 24;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeBadRequest();
@@ -180,10 +163,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 12;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeBadRequest();
@@ -215,10 +195,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 24;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeBadRequest();
@@ -245,10 +222,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 36;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeBadRequest();
@@ -271,10 +245,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 0; // Unknown age
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -290,27 +261,24 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         var createDto = TestConstants.DtoBuilders.CreateValidPetDto(
             speciesId: DogSpeciesId,
             breedId: FirstBreedId,
-            name: TestConstants.IntegrationTests.PetNames.Max
+            name: TestConstants.Pets.Max
         );
         createDto.Gender = PetGender.Female;
         createDto.Size = PetSize.Small;
         createDto.AgeInMonths = 6;
-        createDto.ImageUrls = TestConstants.IntegrationTests.ImageUrls.MultipleImages();
+        createDto.ImageUrls = TestConstants.ImageUrls.MultipleImages();
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         createdPet.Should().NotBeNull();
         createdPet!.ImageUrls.Should().HaveCount(3);
-        createdPet.ImageUrls.Should().Contain(TestConstants.IntegrationTests.ImageUrls.Image1);
-        createdPet.ImageUrls.Should().Contain(TestConstants.IntegrationTests.ImageUrls.Image2);
-        createdPet.ImageUrls.Should().Contain(TestConstants.IntegrationTests.ImageUrls.Image3);
+        createdPet.ImageUrls.Should().Contain(TestConstants.ImageUrls.Image1);
+        createdPet.ImageUrls.Should().Contain(TestConstants.ImageUrls.Image2);
+        createdPet.ImageUrls.Should().Contain(TestConstants.ImageUrls.Image3);
     }
 
     [Fact]
@@ -325,17 +293,14 @@ public class CreatePetIntegrationTests : IntegrationTestBase
             speciesId: DogSpeciesId,
             breedId: FirstBreedId,
             tagIds: allTagIds,
-            name: TestConstants.IntegrationTests.PetNames.Mia
+            name: TestConstants.Pets.Mia
         );
         createDto.Gender = PetGender.Male;
         createDto.Size = PetSize.Large;
         createDto.AgeInMonths = 48;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -359,10 +324,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.TagIds = new List<int>(); // No tags
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -385,10 +347,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 24;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -411,10 +370,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 12;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -441,10 +397,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 18;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
         var afterCreation = DateTime.UtcNow.AddSeconds(5);
 
         // Assert
@@ -469,10 +422,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.AgeInMonths = 0; // Unknown age
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -499,10 +449,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createDto.IsVaccinated = true;
 
         // Act
-        var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
-            createDto
-        );
+        var response = await Client.PostAsJsonAsync(TestConstants.ApiPaths.Pets, createDto);
 
         // Assert
         response.ShouldBeCreated();
@@ -542,7 +489,7 @@ public class CreatePetIntegrationTests : IntegrationTestBase
 
         // Act
         var response = await clientWithoutAuth.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
+            TestConstants.ApiPaths.Pets,
             createDto
         );
 

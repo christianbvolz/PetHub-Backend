@@ -37,8 +37,8 @@ public class PasswordHelperTests
     public void HashPassword_WithDifferentPasswords_ReturnsDifferentHashes()
     {
         // Arrange
-        var password1 = TestConstants.Passwords.AnotherValidPassword;
-        var password2 = TestConstants.Passwords.DifferentPassword;
+        var password1 = TestConstants.Passwords.ValidPassword;
+        var password2 = TestConstants.Passwords.AnotherValidPassword;
 
         // Act
         var hash1 = PasswordHelper.HashPassword(password1);
@@ -67,7 +67,7 @@ public class PasswordHelperTests
     {
         // Arrange
         var correctPassword = TestConstants.Passwords.ValidPassword;
-        var incorrectPassword = TestConstants.Passwords.WrongPassword;
+        var incorrectPassword = TestConstants.Passwords.AnotherValidPassword;
         var hash = PasswordHelper.HashPassword(correctPassword);
 
         // Act
@@ -82,7 +82,7 @@ public class PasswordHelperTests
     {
         // Arrange
         var correctPassword = TestConstants.Passwords.ValidPassword;
-        var wrongCasePassword = TestConstants.Passwords.WrongCasePassword;
+        var wrongCasePassword = "securepassword123!"; // lowercase version
         var hash = PasswordHelper.HashPassword(correctPassword);
 
         // Act
@@ -97,7 +97,7 @@ public class PasswordHelperTests
     {
         // Arrange
         var password = TestConstants.Passwords.ValidPassword;
-        var malformedHash = TestConstants.Passwords.MalformedHash;
+        var malformedHash = "not-a-valid-bcrypt-hash";
 
         // Act
         Action act = () => PasswordHelper.VerifyPassword(password, malformedHash);
@@ -107,9 +107,9 @@ public class PasswordHelperTests
     }
 
     [Theory]
-    [InlineData(TestConstants.Passwords.ShortPassword)]
-    [InlineData(TestConstants.Passwords.AveragePassword)]
-    [InlineData(TestConstants.Passwords.LongPassword)]
+    [InlineData("short")]
+    [InlineData("averageLengthPassword123")]
+    [InlineData("VeryLongPasswordWithLotsOfCharacters123456789!@#$%^&*()")]
     public void HashPassword_WithVariousLengths_ReturnsValidHash(string password)
     {
         // Act
@@ -124,7 +124,7 @@ public class PasswordHelperTests
     public void VerifyPassword_WithSpecialCharacters_WorksCorrectly()
     {
         // Arrange
-        var password = TestConstants.Passwords.SpecialCharsPassword; // Emojis, special chars and Japanese
+        var password = "🔒🔑Password123!こんにちは"; // Emojis, special chars and Japanese
         var hash = PasswordHelper.HashPassword(password);
 
         // Act

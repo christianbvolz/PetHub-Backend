@@ -40,8 +40,8 @@ public class JwtServiceTests
     public void GenerateToken_ReturnsValidJwtToken()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
 
         // Act
         var token = _jwtService.GenerateToken(userId, email);
@@ -55,8 +55,8 @@ public class JwtServiceTests
     public void GenerateToken_ContainsAllRequiredClaims()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
 
         // Act
         var token = _jwtService.GenerateToken(userId, email);
@@ -79,8 +79,8 @@ public class JwtServiceTests
     public void GenerateToken_JtiClaimIsUnique()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
 
         // Act
         var token1 = _jwtService.GenerateToken(userId, email);
@@ -107,8 +107,8 @@ public class JwtServiceTests
     public void GenerateToken_HasCorrectTokenProperties(string propertyToTest)
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
 
         // Act
         var token = _jwtService.GenerateToken(userId, email);
@@ -133,8 +133,8 @@ public class JwtServiceTests
     public void GenerateToken_HasCorrectExpiration()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
         var beforeGeneration = DateTime.UtcNow;
 
         // Act
@@ -156,8 +156,8 @@ public class JwtServiceTests
     public void GenerateToken_CanBeValidatedWithCorrectKey()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
         var token = _jwtService.GenerateToken(userId, email);
 
         var validationParameters = new TokenValidationParameters
@@ -192,8 +192,8 @@ public class JwtServiceTests
     public void GenerateToken_FailsValidationWithWrongKey()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
         var token = _jwtService.GenerateToken(userId, email);
 
         var validationParameters = new TokenValidationParameters
@@ -226,7 +226,7 @@ public class JwtServiceTests
     public void GenerateToken_ClaimsMatchInput(string claimToTest)
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
+        var userId = TestConstants.Users.ValidId;
         var email = TestConstants.Users.AnotherEmail;
 
         // Act
@@ -256,13 +256,13 @@ public class JwtServiceTests
     }
 
     [Theory]
-    [InlineData(TestConstants.Users.ValidEmail)]
-    [InlineData(TestConstants.Users.EmailWithDots)]
-    [InlineData(TestConstants.Users.EmailWithOrg)]
+    [InlineData(TestConstants.Users.Email)]
+    [InlineData("user.name@domain.com")]
+    [InlineData("admin@test.org")]
     public void GenerateToken_HandlesVariousEmailFormats(string email)
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
+        var userId = TestConstants.Users.ValidId;
 
         // Act
         var token = _jwtService.GenerateToken(userId, email);
@@ -282,8 +282,8 @@ public class JwtServiceTests
     public void GenerateToken_WithEmptyGuid_StillGeneratesValidToken()
     {
         // Arrange
-        var userId = TestConstants.Users.EmptyUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = Guid.Empty;
+        var email = TestConstants.Users.Email;
 
         // Act
         var token = _jwtService.GenerateToken(userId, email);
@@ -300,8 +300,8 @@ public class JwtServiceTests
     public void GenerateToken_WithEmptyEmail_StillGeneratesValidToken()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.EmptyEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = "";
 
         // Act
         var token = _jwtService.GenerateToken(userId, email);
@@ -318,8 +318,8 @@ public class JwtServiceTests
     public void GenerateToken_MultipleCallsWithSameData_GenerateDifferentTokens()
     {
         // Arrange
-        var userId = TestConstants.Users.ValidUserId;
-        var email = TestConstants.Users.ValidEmail;
+        var userId = TestConstants.Users.ValidId;
+        var email = TestConstants.Users.Email;
 
         // Act
         var token1 = _jwtService.GenerateToken(userId, email);

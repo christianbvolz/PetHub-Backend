@@ -49,7 +49,7 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         nextCalled.Should().BeTrue();
-        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusOk);
+        _context.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
     }
 
     #endregion
@@ -73,7 +73,7 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         // 499 is a non-standard HTTP status code ("Client Closed Request"), commonly used by nginx and some web servers.
-        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusClientClosedRequest);
+        _context.Response.StatusCode.Should().Be(499);
         _loggerMock.Verify(
             x =>
                 x.Log(
@@ -94,31 +94,31 @@ public class GlobalExceptionMiddlewareTests
     [Theory]
     [InlineData(
         typeof(KeyNotFoundException),
-        TestConstants.Http.StatusNotFound,
+        StatusCodes.Status404NotFound,
         TestConstants.ExceptionTitles.ResourceNotFound,
         TestConstants.ExceptionMessages.PetNotFound
     )]
     [InlineData(
         typeof(ArgumentException),
-        TestConstants.Http.StatusBadRequest,
+        StatusCodes.Status400BadRequest,
         TestConstants.ExceptionTitles.InvalidArgument,
         TestConstants.ExceptionMessages.InvalidTagId
     )]
     [InlineData(
         typeof(ArgumentNullException),
-        TestConstants.Http.StatusBadRequest,
+        StatusCodes.Status400BadRequest,
         TestConstants.ExceptionTitles.InvalidArgument,
         TestConstants.ExceptionMessages.ArgumentNullPetDto
     )]
     [InlineData(
         typeof(UnauthorizedAccessException),
-        TestConstants.Http.StatusForbidden,
+        StatusCodes.Status403Forbidden,
         TestConstants.ExceptionTitles.AccessDenied,
         TestConstants.ExceptionMessages.UserNotAuthorized
     )]
     [InlineData(
         typeof(InvalidOperationException),
-        TestConstants.Http.StatusConflict,
+        StatusCodes.Status409Conflict,
         TestConstants.ExceptionTitles.InvalidOperation,
         TestConstants.ExceptionMessages.PetAlreadyAdopted
     )]
@@ -178,9 +178,9 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(_context);
 
         // Assert
-        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusInternalServerError);
+        _context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
         var problemDetails = await GetProblemDetailsFromResponse();
-        problemDetails.Status.Should().Be(TestConstants.Http.StatusInternalServerError);
+        problemDetails.Status.Should().Be(StatusCodes.Status500InternalServerError);
         problemDetails.Title.Should().Be(TestConstants.ExceptionTitles.AnErrorOccurred);
         problemDetails.Detail.Should().Be(TestConstants.ExceptionMessages.DatabaseConnectionFailed);
         problemDetails.Extensions.Should().ContainKey("stackTrace");
@@ -194,12 +194,12 @@ public class GlobalExceptionMiddlewareTests
     [Theory]
     [InlineData(
         typeof(KeyNotFoundException),
-        TestConstants.Http.StatusNotFound,
+        StatusCodes.Status404NotFound,
         TestConstants.ExceptionMessages.PetWithIdNotFound
     )]
     [InlineData(
         typeof(ArgumentException),
-        TestConstants.Http.StatusBadRequest,
+        StatusCodes.Status400BadRequest,
         TestConstants.ExceptionMessages.InvalidTagIdFormat
     )]
     public async Task InvokeAsync_WithException_ReturnsMessageWithoutDetails_InProduction(
@@ -248,7 +248,7 @@ public class GlobalExceptionMiddlewareTests
         await middleware.InvokeAsync(_context);
 
         // Assert
-        _context.Response.StatusCode.Should().Be(TestConstants.Http.StatusInternalServerError);
+        _context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
         var problemDetails = await GetProblemDetailsFromResponse();
         problemDetails
             .Detail.Should()
@@ -324,7 +324,7 @@ public class GlobalExceptionMiddlewareTests
     {
         // Arrange
         _environmentMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
-        _context.Request.Path = TestConstants.Http.ValidRequestPath;
+        _context.Request.Path = TestConstants.ApiPaths.PetById(999);
         RequestDelegate next = (HttpContext ctx) => throw new KeyNotFoundException();
 
         var middleware = new GlobalExceptionMiddleware(
@@ -338,7 +338,7 @@ public class GlobalExceptionMiddlewareTests
 
         // Assert
         var problemDetails = await GetProblemDetailsFromResponse();
-        problemDetails.Instance.Should().Be(TestConstants.Http.ValidRequestPath);
+        problemDetails.Instance.Should().Be(TestConstants.ApiPaths.PetById(999));
     }
 
     #endregion

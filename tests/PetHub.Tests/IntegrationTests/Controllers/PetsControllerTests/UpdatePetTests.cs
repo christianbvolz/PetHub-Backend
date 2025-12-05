@@ -46,7 +46,7 @@ public class UpdatePetTests : IntegrationTestBase
         createDto.IsVaccinated = false;
 
         var response = await Client.PostAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.Pets,
+            TestConstants.ApiPaths.Pets,
             createDto
         );
         var createdPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
@@ -68,12 +68,12 @@ public class UpdatePetTests : IntegrationTestBase
         Client.AddAuthToken(_ownerToken);
         var updateDto = TestConstants.DtoBuilders.CreateValidUpdatePetDto(
             name: "Updated Pet Name",
-            description: TestConstants.IntegrationTests.Descriptions.Updated
+            description: TestConstants.Pets.UpdatedDescription
         );
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -90,7 +90,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -114,7 +114,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -147,7 +147,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -169,7 +169,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -194,7 +194,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -217,7 +217,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -239,7 +239,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -258,14 +258,14 @@ public class UpdatePetTests : IntegrationTestBase
         {
             ImageUrls = new List<string>
             {
-                TestConstants.IntegrationTests.ImageUrls.Image1,
-                TestConstants.IntegrationTests.ImageUrls.Image2,
+                TestConstants.ImageUrls.Image1,
+                TestConstants.ImageUrls.Image2,
             },
         };
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -273,7 +273,7 @@ public class UpdatePetTests : IntegrationTestBase
         var updatedPet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         updatedPet.Should().NotBeNull();
         updatedPet!.ImageUrls.Should().HaveCount(2);
-        updatedPet.ImageUrls.Should().Contain(TestConstants.IntegrationTests.ImageUrls.Image1);
+        updatedPet.ImageUrls.Should().Contain(TestConstants.ImageUrls.Image1);
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(99999),
+            TestConstants.ApiPaths.PetById(99999),
             updateDto
         );
 
@@ -302,7 +302,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -341,7 +341,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -360,7 +360,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -379,7 +379,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 
@@ -401,7 +401,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Get original IsAdopted status
         var getResponse = await Client.GetAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId)
+            TestConstants.ApiPaths.PetById(_testPetId)
         );
         var originalPet = await getResponse.ReadApiResponseDataAsync<PetResponseDto>();
         var originalIsAdopted = originalPet!.IsAdopted;
@@ -410,7 +410,7 @@ public class UpdatePetTests : IntegrationTestBase
 
         // Act
         var response = await Client.PatchAsJsonAsync(
-            TestConstants.IntegrationTests.ApiPaths.PetById(_testPetId),
+            TestConstants.ApiPaths.PetById(_testPetId),
             updateDto
         );
 

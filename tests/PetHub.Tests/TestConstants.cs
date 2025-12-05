@@ -1,3 +1,5 @@
+using PetHub.API.Enums;
+
 namespace PetHub.Tests;
 
 /// <summary>
@@ -11,18 +13,33 @@ public static class TestConstants
     /// </summary>
     public static class Users
     {
-        public static readonly Guid ValidUserId = new("12345678-1234-1234-1234-123456789012");
-        public static readonly Guid AnotherUserId = new("87654321-4321-4321-4321-210987654321");
-        public static readonly Guid EmptyUserId = Guid.Empty;
+        // User IDs
+        public static readonly Guid ValidId = new("12345678-1234-1234-1234-123456789012");
+        public static readonly Guid EmptyId = Guid.Empty;
 
-        public const string ValidEmail = "test@example.com";
+        // Emails
+        public const string Email = "test@example.com";
         public const string AnotherEmail = "user@example.com";
-        public const string EmailWithDots = "user.name@domain.com";
-        public const string EmailWithOrg = "admin@test.org";
-        public const string EmptyEmail = "";
+        public const string InvalidEmail = "invalid-email";
 
-        public const string ValidPassword = "SecurePassword123!";
-        public const string ValidUsername = "testuser";
+        /// <summary>
+        /// Generates a unique email for test isolation
+        /// </summary>
+        public static string GenerateUniqueEmail() => $"test-{Guid.NewGuid()}@example.com";
+
+        // User details
+        public const string Username = "testuser";
+        public const string PhoneNumber = "11999999999";
+        public const string ZipCode = "01000000";
+        public const string State = "SP";
+        public const string City = "São Paulo";
+        public const string Neighborhood = "Centro";
+        public const string Street = "Rua Teste";
+        public const string StreetNumber = "123";
+
+        // Updated values for update tests
+        public const string UpdatedName = "Updated Name";
+        public const string UpdatedPhone = "11988776655";
     }
 
     /// <summary>
@@ -39,31 +56,26 @@ public static class TestConstants
 
     /// <summary>
     /// Pet-related test data
+    /// Consolidated pet constants including names seeded by TestDataSeeder
     /// </summary>
     public static class Pets
     {
-        public static readonly Guid ValidPetId = new("11111111-1111-1111-1111-111111111111");
-        public static readonly Guid AnotherPetId = new("22222222-2222-2222-2222-222222222222");
+        // Pet Names (seeded by TestDataSeeder in integration tests)
+        public const string Rex = "Rex";
+        public const string Luna = "Luna";
+        public const string Max = "Max";
+        public const string Mia = "Mia";
+        public const string Bella = "Bella";
+        public const string Thor = "Thor";
 
-        public const string ValidPetName = "Buddy";
+        // Additional pet data constants
         public const int ValidAgeInMonths = 24;
-    }
 
-    /// <summary>
-    /// HTTP-related test data
-    /// </summary>
-    public static class Http
-    {
-        public const string ValidRequestPath = "/api/pets/999";
-        public const string AnotherRequestPath = "/api/users/me";
-
-        public const int StatusOk = 200;
-        public const int StatusBadRequest = 400;
-        public const int StatusNotFound = 404;
-        public const int StatusForbidden = 403;
-        public const int StatusConflict = 409;
-        public const int StatusInternalServerError = 500;
-        public const int StatusClientClosedRequest = 499;
+        // Pet descriptions
+        public const string DefaultDescription = "A test pet for integration testing";
+        public const string UpdatedDescription = "Updated description";
+        public const string ShortDescription = "Test description";
+        public const string DetailedDescription = "Testing all relationships";
     }
 
     /// <summary>
@@ -89,15 +101,25 @@ public static class TestConstants
     {
         public const string ValidPassword = "SecurePassword123!";
         public const string AnotherValidPassword = "Password123!";
-        public const string DifferentPassword = "DifferentPassword456!";
-        public const string WrongPassword = "WrongPassword456!";
-        public const string WrongCasePassword = "securepassword123!";
-        public const string ShortPassword = "short";
-        public const string AveragePassword = "averageLengthPassword123";
-        public const string LongPassword =
-            "VeryLongPasswordWithLotsOfCharacters123456789!@#$%^&*()";
-        public const string SpecialCharsPassword = "🔒🔑Password123!こんにちは";
-        public const string MalformedHash = "not-a-valid-bcrypt-hash";
+        public const string DefaultAuthPassword = "test123456";
+    }
+
+    /// <summary>
+    /// Non-existent IDs for testing error scenarios
+    /// Centralized constants for IDs that don't exist in the database
+    /// </summary>
+    public static class NonExistentIds
+    {
+        /// <summary>
+        /// Generic non-existent ID that can be used for any entity type
+        /// </summary>
+        public const int Generic = 999;
+
+        /// <summary>
+        /// Alternative non-existent IDs for testing multiple invalid IDs
+        /// </summary>
+        public const int Alternative1 = 888;
+        public const int Alternative2 = 777;
     }
 
     /// <summary>
@@ -109,7 +131,6 @@ public static class TestConstants
         // Species IDs
         public const int DogSpeciesId = 1;
         public const int CatSpeciesId = 2;
-        public const int NonExistentSpeciesId = 999;
 
         // Species Names
         public const string DogName = "Dog";
@@ -117,17 +138,12 @@ public static class TestConstants
 
         // Breed IDs
         public const int LabradorBreedId = 1;
-        public const int NonExistentBreedId = 999;
 
         // Breed Names
         public const string LabradorName = "Labrador";
         public const string PoodleName = "Poodle";
-        public const string SiameseName = "Siamês";
-        public const string PersianName = "Persa";
-
-        // Seeded Species Names (Portuguese)
-        public const string DogNamePt = "Cachorro";
-        public const string CatNamePt = "Gato";
+        public const string SiameseName = "Siamese";
+        public const string PersianName = "Persian";
 
         /// <summary>
         /// Creates a Dog species instance for testing
@@ -163,14 +179,18 @@ public static class TestConstants
         public const int BlackTagId = 1;
         public const int WhiteTagId = 2;
         public const int SpottedTagId = 3;
-        public const int NonExistentTagId1 = 999;
-        public const int NonExistentTagId2 = 888;
-        public const int NonExistentTagId3 = 777;
 
-        // Tag Names
+        // Tag Names (for unit tests)
         public const string BlackTagName = "Black";
         public const string WhiteTagName = "White";
         public const string SpottedTagName = "Spotted";
+
+        // Tag Names (seeded by TestDataSeeder)
+        public const string WhiteName = "White";
+        public const string BlackName = "Black";
+        public const string BrownName = "Brown";
+        public const string ShortCoatName = "Short Coat";
+        public const string LongCoatName = "Long Coat";
 
         /// <summary>
         /// Creates a Black color tag instance for testing
@@ -191,7 +211,7 @@ public static class TestConstants
             {
                 Id = WhiteTagId,
                 Name = WhiteTagName,
-                Category = PetHub.API.Enums.TagCategory.Color,
+                Category = API.Enums.TagCategory.Color,
             };
 
         /// <summary>
@@ -202,7 +222,7 @@ public static class TestConstants
             {
                 Id = SpottedTagId,
                 Name = SpottedTagName,
-                Category = PetHub.API.Enums.TagCategory.Pattern,
+                Category = API.Enums.TagCategory.Pattern,
             };
 
         /// <summary>
@@ -225,168 +245,61 @@ public static class TestConstants
     }
 
     /// <summary>
-    /// Integration test data - Common values for DTOs and requests
+    /// API Paths - Centralized endpoint paths for tests
     /// </summary>
-    public static class IntegrationTests
+    public static class ApiPaths
     {
-        /// <summary>
-        /// API Paths - Centralized endpoint paths for integration tests
-        /// </summary>
-        public static class ApiPaths
-        {
-            // Auth paths
-            public const string AuthRegister = "/api/auth/register";
-            public const string AuthLogin = "/api/auth/login";
+        // Auth paths
+        public const string AuthRegister = "/api/auth/register";
+        public const string AuthLogin = "/api/auth/login";
 
-            // Pet paths
-            public const string Pets = "/api/pets";
-            public const string PetsSearch = "/api/pets/search";
-            public const string PetsMe = "/api/pets/me";
+        // Pet paths
+        public const string Pets = "/api/pets";
+        public const string PetsSearch = "/api/pets/search";
+        public const string PetsMe = "/api/pets/me";
 
-            public static string PetById(int petId) => $"/api/pets/{petId}";
+        public static string PetById(int petId) => $"/api/pets/{petId}";
 
-            // User paths
-            public const string UsersMe = "/api/users/me";
+        // User paths
+        public const string UsersMe = "/api/users/me";
 
-            // Adoption paths
-            public const string AdoptionRequests = "/api/adoption/requests";
+        // Adoption paths
+        public const string AdoptionRequests = "/api/adoption/requests";
 
-            public static string AdoptionRequestById(int requestId) =>
-                $"/api/adoption/requests/{requestId}";
+        public static string AdoptionRequestById(int requestId) =>
+            $"/api/adoption/requests/{requestId}";
 
-            public static string AdoptionRequestApprove(int requestId) =>
-                $"/api/adoption/requests/{requestId}/approve";
+        public static string AdoptionRequestApprove(int requestId) =>
+            $"/api/adoption/requests/{requestId}/approve";
 
-            public static string AdoptionRequestReject(int requestId) =>
-                $"/api/adoption/requests/{requestId}/reject";
+        public static string AdoptionRequestReject(int requestId) =>
+            $"/api/adoption/requests/{requestId}/reject";
 
-            public static string PetAdoptionRequests(int petId) =>
-                $"/api/adoption/pets/{petId}/requests";
+        public static string PetAdoptionRequests(int petId) =>
+            $"/api/adoption/pets/{petId}/requests";
 
-            public static string MarkPetAsAdopted(int petId) =>
-                $"/api/adoption/pets/{petId}/mark-adopted";
-        }
-
-        /// <summary>
-        /// Pet names for integration tests
-        /// These are the actual pet names seeded by TestDataSeeder in the test database
-        /// </summary>
-        public static class PetNames
-        {
-            public const string Rex = "Rex";
-            public const string Luna = "Luna";
-            public const string Max = "Max";
-            public const string Mia = "Mia";
-            public const string Bella = "Bella";
-            public const string Thor = "Thor";
-        }
-
-        /// <summary>
-        /// Tag names seeded by TestDataSeeder
-        /// </summary>
-        public static class SeededTags
-        {
-            public const string White = "Branco";
-            public const string Black = "Preto";
-            public const string Brown = "Marrom";
-            public const string ShortCoat = "Curto";
-            public const string LongCoat = "Longo";
-        }
-
-        /// <summary>
-        /// User data seeded by TestDataSeeder
-        /// </summary>
-        public static class SeededUsers
-        {
-            public const string Name = "Test User";
-            public const string Email = "test@pethub.com";
-            public const string Password = "testpassword";
-            public const string PhoneNumber = "11999999999";
-            public const string ZipCode = "01000000";
-            public const string State = "SP";
-            public const string City = "São Paulo";
-            public const string Neighborhood = "Centro";
-            public const string Street = "Rua Teste";
-            public const string StreetNumber = "123";
-        }
-
-        /// <summary>
-        /// Common descriptions for integration tests
-        /// </summary>
-        public static class Descriptions
-        {
-            public const string Default = "A test pet for integration testing";
-            public const string Updated = "Updated description";
-            public const string Short = "Test description";
-            public const string Detailed = "Testing all relationships";
-        }
-
-        /// <summary>
-        /// Common image URLs for integration tests
-        /// </summary>
-        public static class ImageUrls
-        {
-            public const string Default = "https://example.com/pet.jpg";
-            public const string Image1 = "https://example.com/pet1.jpg";
-            public const string Image2 = "https://example.com/pet2.jpg";
-            public const string Image3 = "https://example.com/pet3.jpg";
-            public const string Updated = "https://example.com/updated.jpg";
-
-            public static List<string> SingleImage() => new() { Default };
-
-            public static List<string> MultipleImages() => new() { Image1, Image2, Image3 };
-        }
-
-        /// <summary>
-        /// Common user data for integration tests
-        /// </summary>
-        public static class UserData
-        {
-            public const string DefaultName = "Test User";
-            public const string UpdatedName = "Updated Name";
-            public const string DefaultPhone = "11999887766";
-            public const string UpdatedPhone = "11988776655";
-            public const string DefaultPassword = "test123456";
-            public const string UpdatedPassword = "newpassword123";
-            public const string DefaultZipCode = "01310100";
-            public const string DefaultState = "SP";
-            public const string DefaultCity = "São Paulo";
-            public const string DefaultNeighborhood = "Centro";
-            public const string DefaultStreet = "Rua Test";
-            public const string DefaultStreetNumber = "123";
-        }
-
-        /// <summary>
-        /// Email patterns for integration tests
-        /// </summary>
-        public static class Emails
-        {
-            public const string Owner = "owner@example.com";
-            public const string OtherUser = "other@example.com";
-            public const string DeleteOwner = "deleteowner@example.com";
-            public const string DeleteOther = "deleteother@example.com";
-            public const string MarkOwner = "markowner@example.com";
-            public const string MarkOther = "markother@example.com";
-            public const string MyPetsUser = "mypetsuser@example.com";
-            public const string MyPetsOther = "mypetsother@example.com";
-            public const string Login = "login@example.com";
-            public const string Nonexistent = "nonexistent@example.com";
-            public const string TokenTest = "tokentest@example.com";
-            public const string InvalidFormat = "invalid-email";
-            public const string NewEmail = "newemail@example.com";
-            public const string DefaultDomain = "@example.com";
-            public const string DefaultAuthEmail = "test@example.com";
-            public const string DefaultAuthPassword = "test123456";
-
-            /// <summary>
-            /// Generates a unique email for test isolation
-            /// </summary>
-            public static string GenerateUnique() => $"test-{Guid.NewGuid()}@example.com";
-        }
+        public static string MarkPetAsAdopted(int petId) =>
+            $"/api/adoption/pets/{petId}/mark-adopted";
     }
 
     /// <summary>
-    /// DTO Builders for integration tests - Creates fully populated DTOs
+    /// Common image URLs for tests
+    /// </summary>
+    public static class ImageUrls
+    {
+        public const string Default = "https://example.com/pet.jpg";
+        public const string Image1 = "https://example.com/pet1.jpg";
+        public const string Image2 = "https://example.com/pet2.jpg";
+        public const string Image3 = "https://example.com/pet3.jpg";
+        public const string Updated = "https://example.com/updated.jpg";
+
+        public static List<string> SingleImage() => new() { Default };
+
+        public static List<string> MultipleImages() => new() { Image1, Image2, Image3 };
+    }
+
+    /// <summary>
+    /// DTO Builders - Creates fully populated DTOs for tests
     /// </summary>
     public static class DtoBuilders
     {
@@ -394,24 +307,27 @@ public static class TestConstants
         /// Creates a valid CreatePetDto with default values
         /// </summary>
         public static API.DTOs.Pet.CreatePetDto CreateValidPetDto(
+            string? name = null,
             int? speciesId = null,
             int? breedId = null,
-            List<int>? tagIds = null,
-            string? name = null,
-            string? description = null
+            string? description = null,
+            int? ageInMonths = null,
+            PetGender? gender = null,
+            PetSize? size = null,
+            List<int>? tagIds = null
         ) =>
             new()
             {
-                Name = name ?? IntegrationTests.PetNames.Rex,
+                Name = name ?? Pets.Rex,
                 SpeciesId = speciesId ?? SpeciesAndBreeds.DogSpeciesId,
                 BreedId = breedId ?? SpeciesAndBreeds.LabradorBreedId,
-                Gender = PetHub.API.Enums.PetGender.Male,
-                Size = PetHub.API.Enums.PetSize.Medium,
-                AgeInMonths = 24,
-                Description = description ?? IntegrationTests.Descriptions.Default,
+                Gender = gender ?? PetGender.Male,
+                Size = size ?? PetSize.Medium,
+                AgeInMonths = ageInMonths ?? Pets.ValidAgeInMonths,
+                Description = description ?? Pets.DefaultDescription,
                 IsCastrated = true,
                 IsVaccinated = true,
-                ImageUrls = IntegrationTests.ImageUrls.SingleImage(),
+                ImageUrls = ImageUrls.SingleImage(),
                 TagIds = tagIds ?? new List<int>(),
             };
 
@@ -427,14 +343,14 @@ public static class TestConstants
             new()
             {
                 Name = name ?? "Updated Pet Name",
-                Description = description ?? IntegrationTests.Descriptions.Updated,
+                Description = description ?? Pets.UpdatedDescription,
                 BreedId = breedId,
-                Gender = PetHub.API.Enums.PetGender.Female,
-                Size = PetHub.API.Enums.PetSize.Large,
+                Gender = API.Enums.PetGender.Female,
+                Size = API.Enums.PetSize.Large,
                 AgeInMonths = 36,
                 IsCastrated = true,
                 IsVaccinated = true,
-                ImageUrls = new List<string> { IntegrationTests.ImageUrls.Updated },
+                ImageUrls = new List<string> { ImageUrls.Updated },
                 TagIds = tagIds ?? new List<int>(),
             };
 
@@ -442,22 +358,29 @@ public static class TestConstants
         /// Creates a valid CreateUserDto for registration
         /// </summary>
         public static API.DTOs.User.CreateUserDto CreateValidUserDto(
-            string? email = null,
             string? name = null,
-            string? password = null
+            string? email = null,
+            string? password = null,
+            string? phoneNumber = null,
+            string? zipCode = null,
+            string? state = null,
+            string? city = null,
+            string? neighborhood = null,
+            string? street = null,
+            string? streetNumber = null
         ) =>
             new()
             {
-                Name = name ?? IntegrationTests.UserData.DefaultName,
-                Email = email ?? $"test-{Guid.NewGuid()}@example.com",
-                Password = password ?? IntegrationTests.UserData.DefaultPassword,
-                PhoneNumber = IntegrationTests.UserData.DefaultPhone,
-                ZipCode = IntegrationTests.UserData.DefaultZipCode,
-                State = IntegrationTests.UserData.DefaultState,
-                City = IntegrationTests.UserData.DefaultCity,
-                Neighborhood = IntegrationTests.UserData.DefaultNeighborhood,
-                Street = IntegrationTests.UserData.DefaultStreet,
-                StreetNumber = IntegrationTests.UserData.DefaultStreetNumber,
+                Name = name ?? Users.Username,
+                Email = email ?? Users.GenerateUniqueEmail(),
+                Password = password ?? Passwords.ValidPassword,
+                PhoneNumber = phoneNumber ?? Users.PhoneNumber,
+                ZipCode = zipCode ?? Users.ZipCode,
+                State = state ?? Users.State,
+                City = city ?? Users.City,
+                Neighborhood = neighborhood ?? Users.Neighborhood,
+                Street = street ?? Users.Street,
+                StreetNumber = streetNumber ?? Users.StreetNumber,
             };
 
         /// <summary>

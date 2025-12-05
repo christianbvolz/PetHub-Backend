@@ -39,7 +39,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithValidId_ReturnsOk()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
+        var requestUri = TestConstants.ApiPaths.PetById(_existingPetId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -52,7 +52,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithValidId_ReturnsPetDetails()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
+        var requestUri = TestConstants.ApiPaths.PetById(_existingPetId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -70,7 +70,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithValidId_IncludesAllRelationships()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
+        var requestUri = TestConstants.ApiPaths.PetById(_existingPetId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -106,7 +106,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var nonExistentId = 999999;
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(nonExistentId);
+        var requestUri = TestConstants.ApiPaths.PetById(nonExistentId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -119,7 +119,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithInvalidId_ReturnsBadRequest()
     {
         // Arrange
-        var requestUri = $"{TestConstants.IntegrationTests.ApiPaths.Pets}/invalid";
+        var requestUri = $"{TestConstants.ApiPaths.Pets}/invalid";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -132,7 +132,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithZeroId_ReturnsNotFound()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(0);
+        var requestUri = TestConstants.ApiPaths.PetById(0);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -145,7 +145,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithNegativeId_ReturnsNotFound()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(-1);
+        var requestUri = TestConstants.ApiPaths.PetById(-1);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -158,7 +158,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_ResponseStructure_IsCorrect()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
+        var requestUri = TestConstants.ApiPaths.PetById(_existingPetId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -205,11 +205,11 @@ public class GetPetIntegrationTests : IntegrationTestBase
         var rexId =
             (
                 await dbContext.Pets.FirstOrDefaultAsync(p =>
-                    p.Name == TestConstants.IntegrationTests.PetNames.Rex
+                    p.Name == TestConstants.Pets.Rex
                 )
             )?.Id ?? 0;
 
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(rexId);
+        var requestUri = TestConstants.ApiPaths.PetById(rexId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -220,8 +220,8 @@ public class GetPetIntegrationTests : IntegrationTestBase
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
         pet!.Tags.Should().NotBeNullOrEmpty();
-        pet.Tags.Should().Contain(t => t.Name == "Marrom");
-        pet.Tags.Should().Contain(t => t.Name == "Curto");
+        pet.Tags.Should().Contain(t => t.Name == "Brown");
+        pet.Tags.Should().Contain(t => t.Name == "Short Coat");
         pet.Tags.Should()
             .OnlyContain(t => t.Category == TagCategory.Color || t.Category == TagCategory.Coat);
     }
@@ -235,11 +235,11 @@ public class GetPetIntegrationTests : IntegrationTestBase
         var adoptedPetId =
             (
                 await dbContext.Pets.FirstOrDefaultAsync(p =>
-                    p.Name == TestConstants.IntegrationTests.PetNames.Thor
+                    p.Name == TestConstants.Pets.Thor
                 )
             )?.Id ?? 0;
 
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(adoptedPetId);
+        var requestUri = TestConstants.ApiPaths.PetById(adoptedPetId);
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -249,7 +249,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
 
         var pet = await response.ReadApiResponseDataAsync<PetResponseDto>();
         pet.Should().NotBeNull();
-        pet!.Name.Should().Be(TestConstants.IntegrationTests.PetNames.Thor);
+        pet!.Name.Should().Be(TestConstants.Pets.Thor);
         pet.IsAdopted.Should().BeTrue();
     }
 
@@ -257,7 +257,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_ReturnsConsistentData_OnMultipleRequests()
     {
         // Arrange
-        var requestUri = TestConstants.IntegrationTests.ApiPaths.PetById(_existingPetId);
+        var requestUri = TestConstants.ApiPaths.PetById(_existingPetId);
 
         // Act
         var response1 = await Client.GetAsync(requestUri);

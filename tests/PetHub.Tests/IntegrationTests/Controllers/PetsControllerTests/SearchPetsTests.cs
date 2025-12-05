@@ -71,7 +71,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterBySpecies_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?species=Cachorro";
+        var requestUri = "/api/pets/search?species=Dog";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -83,7 +83,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Rex, Max and Bella (dogs only)
-        result.Items.Should().OnlyContain(p => p.SpeciesName == "Cachorro");
+        result.Items.Should().OnlyContain(p => p.SpeciesName == "Dog");
         result.TotalCount.Should().Be(3);
     }
 
@@ -151,7 +151,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByColor_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?colors=Branco";
+        var requestUri = "/api/pets/search?colors=White";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -163,7 +163,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(3); // Luna, Mia and Bella (white pets)
-        result.Items.Should().OnlyContain(p => p.Tags.Any(t => t.Name == "Branco"));
+        result.Items.Should().OnlyContain(p => p.Tags.Any(t => t.Name == "White"));
         result.TotalCount.Should().Be(3);
     }
 
@@ -171,7 +171,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByMultipleColors_ReturnsOnlyPetsWithAllColors()
     {
         // Arrange - search for pets that have BOTH colors (White AND Black)
-        var requestUri = "/api/pets/search?colors=Branco,Preto";
+        var requestUri = "/api/pets/search?colors=White,Black";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -184,8 +184,8 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(1); // Only Bella (has both white AND black)
         result.Items.First().Name.Should().Be("Bella");
-        result.Items.First().Tags.Should().Contain(t => t.Name == "Branco");
-        result.Items.First().Tags.Should().Contain(t => t.Name == "Preto");
+        result.Items.First().Tags.Should().Contain(t => t.Name == "White");
+        result.Items.First().Tags.Should().Contain(t => t.Name == "Black");
         result.TotalCount.Should().Be(1);
     }
 
@@ -193,7 +193,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_FilterByCoat_ReturnsOnlyMatchingPets()
     {
         // Arrange
-        var requestUri = "/api/pets/search?coat=Longo";
+        var requestUri = "/api/pets/search?coat=Long Coat";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -205,7 +205,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!.Items.Should().NotBeNullOrEmpty();
         result.Items.Should().HaveCount(2); // Max and Mia (long coat)
-        result.Items.Should().OnlyContain(p => p.Tags.Any(t => t.Name == "Longo"));
+        result.Items.Should().OnlyContain(p => p.Tags.Any(t => t.Name == "Long Coat"));
         result.TotalCount.Should().Be(2);
     }
 
@@ -213,7 +213,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
     public async Task SearchPets_CombinedFilters_ReturnsCorrectResults()
     {
         // Arrange
-        var requestUri = "/api/pets/search?species=Cachorro&size=Large";
+        var requestUri = "/api/pets/search?species=Dog&size=Large";
 
         // Act
         var response = await Client.GetAsync(requestUri);
@@ -311,7 +311,7 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         result.Should().NotBeNull();
         result!
             .Items.Should()
-            .NotContain(p => p.Name == TestConstants.IntegrationTests.PetNames.Thor);
+            .NotContain(p => p.Name == TestConstants.Pets.Thor);
         result.Items.Should().OnlyContain(p => !p.IsAdopted);
     }
 }
