@@ -105,8 +105,7 @@ public class GetPetIntegrationTests : IntegrationTestBase
     public async Task GetPet_WithNonExistentId_ReturnsNotFound()
     {
         // Arrange
-        var nonExistentId = 999999;
-        var requestUri = TestConstants.ApiPaths.PetById(nonExistentId);
+        var requestUri = TestConstants.ApiPaths.PetById(TestConstants.NonExistentIds.Generic);
 
         // Act
         var response = await Client.GetAsync(requestUri);
