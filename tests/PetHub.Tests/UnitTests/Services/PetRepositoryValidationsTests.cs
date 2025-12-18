@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using PetHub.API.Data;
-using PetHub.API.Enums;
-using PetHub.API.Models;
 using PetHub.API.Services;
 
 namespace PetHub.Tests.UnitTests.Services;

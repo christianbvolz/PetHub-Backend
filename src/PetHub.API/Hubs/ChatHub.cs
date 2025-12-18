@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.SignalR;
-using PetHub.API.Models;
 
 namespace PetHub.API.Hubs;
 

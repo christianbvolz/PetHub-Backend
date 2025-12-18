@@ -1,9 +1,6 @@
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
-using PetHub.Tests;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 

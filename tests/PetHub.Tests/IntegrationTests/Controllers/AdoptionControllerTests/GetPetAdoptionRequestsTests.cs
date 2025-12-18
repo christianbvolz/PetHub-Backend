@@ -1,15 +1,10 @@
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Adoption;
-using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
 using PetHub.API.DTOs.User;
 using PetHub.API.Enums;
 using PetHub.API.Models;
-using PetHub.Tests;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;

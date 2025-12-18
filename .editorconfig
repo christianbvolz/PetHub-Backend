@@ -1,7 +1,6 @@
-# EditorConfig - https://editorconfig.org
-
+# EditorConfig is used to configure code-style and analyzer severities for Roslyn
+# Keep this file root for editorconfig lookup
 root = true
-
 # All files
 [*]
 charset = utf-8
@@ -11,9 +10,18 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# C# files
+# C# files - combined rules
 [*.cs]
 indent_size = 4
+
+# Treat unused using directives (IDE0005) as warnings. Change to 'error' to fail builds.
+dotnet_diagnostic.IDE0005.severity = warning
+
+# Treat simplify name suggestions (IDE0001) as warnings so they appear in Problems
+dotnet_diagnostic.IDE0001.severity = warning
+
+# Optionally enforce organizing usings and formatting rules
+dotnet_sort_system_directives_first = true
 
 # Project and solution files
 [*.{csproj,sln,props,targets}]
@@ -35,7 +43,6 @@ trim_trailing_whitespace = false
 [*.cs]
 
 # Using directives organization
-dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
 # Code preferences

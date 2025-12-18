@@ -12,7 +12,8 @@ namespace PetHub.API.Controllers;
 public class AuthController(
     IUserRepository userRepository,
     IJwtService jwtService,
-    IRefreshTokenService refreshTokenService
+    IRefreshTokenService refreshTokenService,
+    Utils.ICookieOptionsProvider cookieOptionsProvider
 ) : ApiControllerBase
 {
     /// <summary>
@@ -32,16 +33,9 @@ public class AuthController(
             var user = await userRepository.CreateAsync(dto);
             var token = jwtService.GenerateToken(user.Id, user.Email);
 
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var refresh = await refreshTokenService.CreateAsync(user.Id, ipAddress);
+            var refresh = await refreshTokenService.CreateAsync(user.Id);
 
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(14),
-                Secure = true, // Only send over HTTPS
-                SameSite = SameSiteMode.Lax, // Or Strict, depending on your needs
-            };
+            var cookieOptions = cookieOptionsProvider.CreateRefreshCookieOptions();
             Response.Cookies.Append("refreshToken", refresh, cookieOptions);
 
             var loginResponse = new LoginResponseDto
@@ -80,16 +74,10 @@ public class AuthController(
 
         var token = jwtService.GenerateToken(user.Id, user.Email);
 
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var refresh = await refreshTokenService.CreateAsync(user.Id, ipAddress);
+        var refresh = await refreshTokenService.CreateAsync(user.Id);
 
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Expires = DateTime.UtcNow.AddDays(14),
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-        };
+        var cookieOptions = cookieOptionsProvider.CreateRefreshCookieOptions();
+
         Response.Cookies.Append("refreshToken", refresh, cookieOptions);
 
         var loginResponse = new LoginResponseDto
@@ -128,17 +116,10 @@ public class AuthController(
                 return Error("Invalid token.");
             }
 
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var newRefresh = await refreshTokenService.RotateAsync(incoming, ipAddress);
+            var newRefresh = await refreshTokenService.RotateAsync(incoming);
             var newAccess = jwtService.GenerateToken(existing.User.Id, existing.User.Email);
 
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(14),
-                Secure = true,
-                SameSite = SameSiteMode.Lax,
-            };
+            var cookieOptions = cookieOptionsProvider.CreateRefreshCookieOptions();
             Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);
 
             var loginResponse = new LoginResponseDto
@@ -174,8 +155,7 @@ public class AuthController(
             return Error("Refresh token is required.");
         }
 
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var ok = await refreshTokenService.RevokeAsync(incoming, ipAddress);
+        var ok = await refreshTokenService.RevokeAsync(incoming);
 
         if (!ok)
         {
@@ -183,12 +163,7 @@ public class AuthController(
         }
 
         // Also delete the cookie from the client
-        var deleteOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-        };
+        var deleteOptions = cookieOptionsProvider.CreateDeleteCookieOptions();
         Response.Cookies.Delete("refreshToken", deleteOptions);
 
         return Success("Token revoked successfully.");

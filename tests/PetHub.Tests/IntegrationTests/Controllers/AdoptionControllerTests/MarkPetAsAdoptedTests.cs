@@ -1,12 +1,9 @@
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using PetHub.API.Data;
-using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
+using PetHub.API.DTOs.User;
 using PetHub.API.Enums;
 using PetHub.API.Models;
-using PetHub.Tests;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
@@ -102,13 +99,11 @@ public class MarkPetAsAdoptedTests : IntegrationTestBase
 
         Client.AddAuthToken(adopter1Token);
         var adopter1Response = await Client.GetAsync(TestConstants.ApiPaths.UsersMe);
-        var adopter1 =
-            await adopter1Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
+        var adopter1 = await adopter1Response.ReadApiResponseDataAsync<UserResponseDto>();
 
         Client.AddAuthToken(adopter2Token);
         var adopter2Response = await Client.GetAsync(TestConstants.ApiPaths.UsersMe);
-        var adopter2 =
-            await adopter2Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
+        var adopter2 = await adopter2Response.ReadApiResponseDataAsync<UserResponseDto>();
 
         int request1Id,
             request2Id;

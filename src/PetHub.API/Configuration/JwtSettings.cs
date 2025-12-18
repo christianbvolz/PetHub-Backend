@@ -19,6 +19,6 @@ public class JwtSettings
     [Required(ErrorMessage = "JWT Audience is required")]
     public required string Audience { get; set; }
 
-    [Range(1, 1440, ErrorMessage = "JWT ExpirationMinutes must be between 1 and 1440 (24 hours)")]
-    public int ExpirationMinutes { get; set; } = 1440; // Default: 24 hours
+    [Range(1, 60, ErrorMessage = "JWT ExpirationMinutes must be between 1 and 60.")]
+    public int ExpirationMinutes { get; set; } = 60; // Default: 1 hour
 }

@@ -1,11 +1,10 @@
 using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using PetHub.API.Data;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
-using PetHub.Tests;
+using PetHub.API.Utils;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -143,8 +142,24 @@ public class RefreshTokenTests : IClassFixture<PetHubWebApplicationFactory>
             secondRefreshDto
         );
 
-        // Assert: Should fail with error
-        await secondRefreshResponse.ShouldBeBadRequest().WithErrorMessage("invalidated");
+        // Assert: Should fail with BadRequest (implementation uses batch update)
+        secondRefreshResponse.ShouldBeBadRequest();
+
+        // Verify in DB that the original token was revoked
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var user = await db.Users.FirstAsync(u => u.Email == "refresh3@test.com");
+        var oldTokenHash = RefreshTokenHelper.ComputeSha256Hash(oldRefreshToken);
+        var oldToken = await db.RefreshTokens.FirstAsync(t => t.TokenHash == oldTokenHash);
+
+        oldToken.RevokedAt.Should().NotBeNull("the reused token should be revoked");
+
+        // Ensure at least one token was revoked for this user
+        var revoked = await db
+            .RefreshTokens.Where(t => t.UserId == user.Id && t.RevokedAt != null)
+            .ToListAsync();
+        revoked.Should().NotBeEmpty();
     }
 
     [Fact]

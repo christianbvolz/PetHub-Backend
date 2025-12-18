@@ -19,7 +19,6 @@ public class JwtService(IOptions<JwtSettings> jwtSettings) : IJwtService
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()), // Standard claim for User ID
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, email),
             new Claim(JwtRegisteredClaimNames.Jti, UuidHelper.NewId().ToString()),

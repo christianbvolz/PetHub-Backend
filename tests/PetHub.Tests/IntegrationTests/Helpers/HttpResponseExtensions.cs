@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using PetHub.API.DTOs.Common;
 
 namespace PetHub.Tests.IntegrationTests.Helpers;

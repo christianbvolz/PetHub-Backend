@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
+using System.Text;
 
 namespace PetHub.API.Utils;
 
-public static class TokenHelper
+public static class RefreshTokenHelper
 {
     /// <summary>
     /// Generates a cryptographically secure random token.
@@ -30,8 +31,8 @@ public static class TokenHelper
     public static string ComputeSha256Hash(string input)
     {
         using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        var builder = new System.Text.StringBuilder();
+        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+        var builder = new StringBuilder(64);
         foreach (var b in bytes)
         {
             builder.Append(b.ToString("x2"));

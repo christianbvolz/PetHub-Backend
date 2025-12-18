@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
-using PetHub.Tests;
 using PetHub.Tests.IntegrationTests.Helpers;
 
 namespace PetHub.Tests.IntegrationTests.Infrastructure;

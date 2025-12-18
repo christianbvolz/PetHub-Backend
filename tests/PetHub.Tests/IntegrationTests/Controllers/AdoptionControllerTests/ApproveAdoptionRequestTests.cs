@@ -1,14 +1,10 @@
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Adoption;
-using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
+using PetHub.API.DTOs.User;
 using PetHub.API.Enums;
 using PetHub.API.Models;
-using PetHub.Tests;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
@@ -64,18 +60,15 @@ public class ApproveAdoptionRequestTests
         // Get adopter IDs
         _client.AddAuthToken(adopter1Token);
         var adopter1Response = await _client.GetAsync(TestConstants.ApiPaths.UsersMe);
-        var adopter1 =
-            await adopter1Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
+        var adopter1 = await adopter1Response.ReadApiResponseDataAsync<UserResponseDto>();
 
         _client.AddAuthToken(adopter2Token);
         var adopter2Response = await _client.GetAsync(TestConstants.ApiPaths.UsersMe);
-        var adopter2 =
-            await adopter2Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
+        var adopter2 = await adopter2Response.ReadApiResponseDataAsync<UserResponseDto>();
 
         _client.AddAuthToken(adopter3Token);
         var adopter3Response = await _client.GetAsync(TestConstants.ApiPaths.UsersMe);
-        var adopter3 =
-            await adopter3Response.ReadApiResponseDataAsync<PetHub.API.DTOs.User.UserResponseDto>();
+        var adopter3 = await adopter3Response.ReadApiResponseDataAsync<UserResponseDto>();
 
         // Create multiple adoption requests in a new scope
         using (var newScope = _factory.Services.CreateScope())

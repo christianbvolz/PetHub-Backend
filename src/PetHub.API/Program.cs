@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -143,6 +144,15 @@ builder
     .ValidateDataAnnotations() // Validates [Required], [Range], etc.
     .ValidateOnStart(); // Fails fast on startup if configuration is invalid
 
+// Refresh Token Configuration (Options Pattern)
+builder
+    .Services.AddOptions<PetHub.API.Configuration.RefreshTokenSettings>()
+    .Bind(
+        builder.Configuration.GetSection(PetHub.API.Configuration.RefreshTokenSettings.SectionName)
+    )
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 // JWT Authentication
 builder
     .Services.AddAuthentication(options =>
@@ -164,6 +174,10 @@ builder
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            // Use JWT `sub` as the Name claim so libraries that read User.Identity.Name
+            // will receive the subject (the user id). This avoids emitting duplicate
+            // claims in the token (we keep `sub` only in JwtService).
+            NameClaimType = JwtRegisteredClaimNames.Sub,
             // ClockSkew uses the default value of 5 minutes. It is not currently configurable.
         };
 
@@ -187,6 +201,12 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
 builder.Services.AddSingleton<IJwtService, JwtService>(); // Singleton: stateless service, thread-safe
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+// Cookie options provider (reads RefreshTokenSettings)
+builder.Services.AddSingleton<
+    PetHub.API.Utils.ICookieOptionsProvider,
+    PetHub.API.Utils.CookieOptionsProvider
+>();
 
 // Background Services
 builder.Services.AddHostedService<RefreshTokenCleanupService>();

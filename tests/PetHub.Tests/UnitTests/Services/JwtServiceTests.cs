@@ -65,9 +65,6 @@ public class JwtServiceTests
         // Assert
         jwtToken
             .Claims.Should()
-            .Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == userId.ToString());
-        jwtToken
-            .Claims.Should()
             .Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userId.ToString());
         jwtToken
             .Claims.Should()
@@ -237,13 +234,9 @@ public class JwtServiceTests
         switch (claimToTest)
         {
             case "UserId":
-                var nameIdentifierClaim = jwtToken
-                    .Claims.First(c => c.Type == ClaimTypes.NameIdentifier)
-                    .Value;
                 var subClaim = jwtToken
                     .Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub)
                     .Value;
-                nameIdentifierClaim.Should().Be(userId.ToString());
                 subClaim.Should().Be(userId.ToString());
                 break;
             case "Email":
@@ -293,7 +286,9 @@ public class JwtServiceTests
         token.Should().NotBeNullOrEmpty();
         jwtToken
             .Claims.Should()
-            .Contain(c => c.Type == ClaimTypes.NameIdentifier && c.Value == Guid.Empty.ToString());
+            .Contain(c =>
+                c.Type == JwtRegisteredClaimNames.Sub && c.Value == Guid.Empty.ToString()
+            );
     }
 
     [Fact]

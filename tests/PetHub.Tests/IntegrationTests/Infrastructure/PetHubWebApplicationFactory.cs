@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using PetHub.API.Data;
 
 namespace PetHub.Tests.IntegrationTests.Infrastructure;

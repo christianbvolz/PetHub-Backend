@@ -1,8 +1,6 @@
 using System.Net;
-using System.Net.Http.Json;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
-using PetHub.Tests;
 using PetHub.Tests.Extensions;
 
 namespace PetHub.Tests.IntegrationTests.Helpers;

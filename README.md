@@ -73,6 +73,23 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
 - **Validação on Startup** com Data Annotations
 - Clock Skew configurado (tolerância de 5 minutos)
 
+#### Uso do claim `sub` como `Name` (configuração de validação JWT)
+
+O projeto mapeia o claim JWT padrão `sub` (subject) para o claim de nome usado pelo runtime (`User.Identity.Name`).
+Isso evita emitir claims duplicados (por exemplo `sub` e `ClaimTypes.NameIdentifier`) e faz com que bibliotecas que leem `User.Identity.Name` retornem diretamente o id do usuário.
+
+Trecho-chave (em `Program.cs`):
+
+```csharp
+options.TokenValidationParameters = new TokenValidationParameters
+{
+  // ... outras configurações ...
+  NameClaimType = JwtRegisteredClaimNames.Sub,
+};
+```
+
+Compatibilidade: removemos a emissão separada de `ClaimTypes.NameIdentifier` no token. Se algum client/integração depender desse claim, atualize para usar `User.Identity.Name` ou leia o claim `sub` diretamente do token.
+
 #### ✅ **Autorização**
 - Endpoints protegidos com `[Authorize]`
 - Extração automática do UserId do token JWT
@@ -366,7 +383,7 @@ ASPNETCORE_ENVIRONMENT=Production
 - [x] **Implementar autenticação JWT** ✅
 - [x] **Adicionar repository pattern para Users** ✅
 - [x] **Proteger endpoints com [Authorize]** ✅
-- [ ] Adicionar refresh tokens para JWT
+- [x] Adicionar refresh tokens para JWT
 - [ ] Implementar sistema de favoritos
 - [ ] Completar fluxo de pedidos de adoção
 - [ ] Adicionar upload de imagens real (S3/Cloudinary)
@@ -376,6 +393,64 @@ ASPNETCORE_ENVIRONMENT=Production
 - [ ] Adicionar logging estruturado (Serilog)
 - [ ] Implementar health checks
 - [ ] Adicionar testes unitários (além dos de integração)
+
+### 🔐 Refresh Tokens (JWT)
+
+O backend implementa um fluxo de refresh tokens para permitir a renovação segura de tokens de acesso (JWT). A implementação usa refresh tokens rotativos transportados via cookie `HttpOnly` para reduzir o risco de XSS.
+
+Principais pontos
+- Cookie: `refreshToken` (HttpOnly, `Secure`, `SameSite=Lax`) com expiração de 14 dias.
+- Rotação: ao usar o endpoint `/api/auth/refresh` o refresh token atual é revogado e um novo é gerado e enviado como cookie.
+- Armazenamento: apenas o hash SHA-256 do refresh token é persistido no banco; o valor em texto claro nunca é salvo.
+- Reuso detectado: se um token revogado/expirado for reapresentado, todas as sessões (refresh tokens) do usuário são revogadas por segurança.
+- Revogação manual: endpoint `/api/auth/revoke` permite invalidar um token (logout de uma sessão específica).
+- Limpeza automática: um `BackgroundService` remove tokens expirados periodicamente.
+
+Endpoints
+- `POST /api/auth/refresh` — Renova o access token usando o refresh token. O controller lê primeiro o cookie `refreshToken`; como fallback ele aceita um body JSON `{ "refreshToken": "..." }` (útil para testes ou clients que não usam cookies).
+- `POST /api/auth/revoke` — Revoga o refresh token atual (lê cookie ou body) e remove o cookie no cliente.
+
+Exemplo (login retorna cookie HttpOnly):
+
+```bash
+# Login (o refresh token será enviado como cookie HttpOnly)
+curl -i -X POST https://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"Password123!"}'
+```
+
+Exemplo (usar refresh via body — útil em testes automatizados):
+
+```bash
+curl -i -X POST https://localhost:5001/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"<TOKEN_OBTIDO_PELO_COOKIE>"}'
+```
+
+Segurança e boas práticas
+- Use HTTPS em produção (cookie `Secure` exige HTTPS).
+- Em ambientes com proxy/load-balancer, habilite o middleware de `ForwardedHeaders` e confie nos proxies configurados para obter o IP real (veja `X-Forwarded-For`).
+- Considere anonimizar ou truncar IPs ao persistir para reduzir exposição de dados pessoais.
+- Tokens são gerados de forma segura e codificados em Base64 URL-safe (sem `+`, `/`, `=`), tornando-os seguros para transporte em cookies.
+- Armazene apenas hashes (SHA-256) no banco para reduzir impacto em caso de vazamento.
+
+Operação e manutenção
+- Há um serviço hospedado (`RefreshTokenCleanupService`) que roda periodicamente para deletar tokens expirados do banco.
+- Política de retenção: considere remover tokens e logs antigos (ex.: 90 dias) para cumprir requisitos de privacidade.
+
+Observações para desenvolvedores
+- Para testes de integração o controller aceita o token via body, o que facilita cenários de teste com `WebApplicationFactory`.
+- Campos relacionados no modelo `RefreshToken`: `TokenHash`, `UserId`, `ExpiresAt`, `CreatedAt`, `RevokedAt`, `ReplacedByTokenHash`.
+ 
+
+### Melhorias de Segurança (opcionais)
+
+Algumas melhorias adicionais que você pode considerar para reforçar a segurança e a observabilidade das sessões:
+
+- Registrar o IP do cliente (por exemplo, em um modelo separado de auditoria) — útil para auditoria e investigação, mas com implicações de privacidade. No projeto atual o modelo `RefreshToken` não armazena IPs por padrão para evitar coletar dados pessoais sem necessidade.
+- Implementar identificação amigável de sessão via `DeviceName` (opcional fornecido pelo cliente) e armazenar o `User-Agent`. Isso permite ao usuário visualizar e revogar sessões específicas no painel de conta.
+- Como alternativa à coleta de IP, considere coletar metadados opcionais (device name, truncated user-agent) e tornar esse logging configurável via `RefreshTokenSettings.LogClientInfo`.
+
 
 ### Melhorias para SSR (Server-Side Rendering)
 
