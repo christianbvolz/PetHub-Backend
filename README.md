@@ -3,7 +3,7 @@
 O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de estimação com donos ou abrigos que possuem animais para adoção. Este repositório contém o Backend (API) da aplicação, construído com tecnologias modernas do ecossistema .NET.
 
 [![CI](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-150%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-203%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87.8%25-brightgreen)](tests/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -17,7 +17,7 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
 - **Tempo Real:** SignalR (Para o sistema de Chat)
 - **Segurança:** BCrypt (Hash de senhas)
 - **Documentação:** Swagger / OpenAPI (Swashbuckle 6.8.1)
-- **Testes:** xUnit + FluentAssertions (125 integration + 25 unit tests)
+- **Testes:** xUnit + FluentAssertions (203 testes: 178 integration + 25 unit tests)
 - **Cobertura:** 87.8% de cobertura de código (Coverlet)
 - **Padrões:** Repository Pattern, DTOs, Dependency Injection
 - **CI/CD:** GitHub Actions com verificação de cobertura
@@ -236,28 +236,42 @@ PetHub-Backend/
 ├── src/
 │   └── PetHub.API/              # Projeto principal da API
 │       ├── Controllers/          # Endpoints HTTP (AuthController, PetsController, UsersController)
-│       ├── Models/               # Entidades do banco (Pet, User, Species, etc)
+│       ├── Models/               # Entidades do banco (Pet, User, Species, RefreshToken, etc)
 │       ├── DTOs/                 # Data Transfer Objects
 │       │   ├── Pet/              # CreatePetDto, PetResponseDto, SearchPetsQuery
-│       │   ├── User/             # LoginDto, LoginResponseDto, UserResponseDto, CreateUserDto
+│       │   ├── User/             # LoginDto, RefreshRequestDto, RevokeRequestDto, UserResponseDto
 │       │   └── Common/           # PagedResult<T>
 │       ├── Services/             # Lógica de negócio
-│       │   ├── IPetRepository.cs # Interface do repositório de Pets
-│       │   ├── PetRepository.cs  # Implementação com EF Core
-│       │   ├── IUserRepository.cs # Interface do repositório de Users
-│       │   ├── UserRepository.cs  # Implementação com autenticação
-│       │   ├── IJwtService.cs     # Interface do serviço JWT
-│       │   └── JwtService.cs      # Geração e validação de tokens JWT
+│       │   ├── IPetRepository.cs         # Interface do repositório de Pets
+│       │   ├── PetRepository.cs          # Implementação com EF Core
+│       │   ├── IUserRepository.cs        # Interface do repositório de Users
+│       │   ├── UserRepository.cs         # Implementação com autenticação
+│       │   ├── IJwtService.cs            # Interface do serviço JWT
+│       │   ├── JwtService.cs             # Geração e validação de tokens JWT
+│       │   ├── IRefreshTokenService.cs   # Interface do serviço de Refresh Tokens
+│       │   ├── RefreshTokenService.cs    # Implementação: create, rotate, revoke
+│       │   └── RefreshTokenCleanupService.cs # Background service para limpeza
+│       ├── Configuration/        # Modelos de configuração (JwtSettings, RefreshTokenSettings)
 │       ├── Mappings/             # Extension methods para mapear entidades → DTOs
 │       ├── Data/                 # Contexto EF Core + Migrations + Seeding
 │       ├── Enums/                # PetGender, PetSize, TagCategory, etc
 │       ├── Hubs/                 # SignalR hubs (Chat em tempo real)
 │       ├── Middlewares/          # GlobalExceptionMiddleware
-│       ├── Utils/                # PasswordHelper (BCrypt), UuidHelper (UUID v7)
+│       ├── Utils/                # PasswordHelper, RefreshTokenHelper, CookieOptionsProvider
 │       └── Program.cs            # Entry point + configuração + JWT auth
 │
 ├── tests/
-│   └── PetHub.Tests/            # Testes de integração (xUnit)
+│   └── PetHub.Tests/            # Testes (xUnit + FluentAssertions)
+│       ├── IntegrationTests/
+│       │   ├── Controllers/
+│       │   │   ├── AuthControllerTests/
+│       │   │   │   └── RefreshTokenTests.cs  # 11 testes de refresh token
+│       │   │   ├── PetsControllerTests/      # Testes de CRUD de pets
+│       │   │   └── UsersControllerTests/     # Testes de usuários
+│       │   ├── TestConstants.cs              # Constantes centralizadas
+│       │   ├── TestDataSeeder.cs             # Dados de teste
+│       │   └── PetHubWebApplicationFactory.cs # Factory para testes
+│       └── UnitTests/            # Testes unitários (PasswordHelper, etc)
 │       └── IntegrationTests/
 │           ├── GetPetIntegrationTests.cs        # 11 testes
 │           ├── SearchPetsIntegrationTests.cs    # 14 testes
@@ -358,7 +372,9 @@ ASPNETCORE_ENVIRONMENT=Production
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
 | `POST` | `/api/auth/register` | Registrar novo usuário | ✅ Implementado |
-| `POST` | `/api/auth/login` | Login JWT | ✅ Implementado |
+| `POST` | `/api/auth/login` | Login JWT + Refresh Token (cookie HttpOnly) | ✅ Implementado |
+| `POST` | `/api/auth/refresh` | Renovar access token usando refresh token | ✅ Implementado |
+| `POST` | `/api/auth/revoke` | Revogar refresh token (logout) | ✅ Implementado |
 
 ### 👤 Usuários
 
@@ -383,7 +399,13 @@ ASPNETCORE_ENVIRONMENT=Production
 - [x] **Implementar autenticação JWT** ✅
 - [x] **Adicionar repository pattern para Users** ✅
 - [x] **Proteger endpoints com [Authorize]** ✅
-- [x] Adicionar refresh tokens para JWT
+- [x] **Adicionar refresh tokens para JWT** ✅
+  - ✅ Rotação automática de tokens
+  - ✅ Cookies HttpOnly para transporte seguro
+  - ✅ Detecção de reutilização com revogação de sessão
+  - ✅ Background service para limpeza de tokens expirados
+  - ✅ 11 testes de integração cobrindo todos os cenários
+  - ✅ Documentação de segurança em DTOs e endpoints
 - [ ] Implementar sistema de favoritos
 - [ ] Completar fluxo de pedidos de adoção
 - [ ] Adicionar upload de imagens real (S3/Cloudinary)
@@ -428,28 +450,44 @@ curl -i -X POST https://localhost:5001/api/auth/refresh \
 ```
 
 Segurança e boas práticas
-- Use HTTPS em produção (cookie `Secure` exige HTTPS).
-- Em ambientes com proxy/load-balancer, habilite o middleware de `ForwardedHeaders` e confie nos proxies configurados para obter o IP real (veja `X-Forwarded-For`).
-- Considere anonimizar ou truncar IPs ao persistir para reduzir exposição de dados pessoais.
-- Tokens são gerados de forma segura e codificados em Base64 URL-safe (sem `+`, `/`, `=`), tornando-os seguros para transporte em cookies.
-- Armazene apenas hashes (SHA-256) no banco para reduzir impacto em caso de vazamento.
+- **HTTPS obrigatório em produção:** O cookie `Secure` garante que o refresh token só é transmitido via HTTPS.
+- **Cookies HttpOnly:** Protege contra XSS ao impedir acesso JavaScript ao token. Preferir sempre cookies em produção.
+- **Tokens rotativos:** Cada refresh gera um novo token e revoga o anterior, limitando janela de ataque.
+- **Detecção de reutilização:** Tentativa de usar token revogado/expirado revoga todas as sessões do usuário (indica comprometimento).
+- **Hashing SHA-256:** Apenas hashes são armazenados no banco; tokens em texto claro nunca persistidos.
+- **Base64 URL-safe:** Tokens gerados sem caracteres especiais (`+`, `/`, `=`), seguros para cookies e URLs.
+- **Sem armazenamento de IPs:** Por padrão, não coletamos IPs dos clientes para respeitar privacidade (LGPD/GDPR).
+- **Documentação de segurança:** DTOs (`RefreshRequestDto`, `RevokeRequestDto`) e endpoints contêm avisos XML sobre uso correto de cookies HttpOnly.
 
 Operação e manutenção
-- Há um serviço hospedado (`RefreshTokenCleanupService`) que roda periodicamente para deletar tokens expirados do banco.
-- Política de retenção: considere remover tokens e logs antigos (ex.: 90 dias) para cumprir requisitos de privacidade.
+- **Background Service:** `RefreshTokenCleanupService` executa limpeza automática de tokens expirados a cada 1 hora.
+- **Configuração centralizada:** `RefreshTokenSettings` via Options pattern (tempo de expiração configurável).
+- **Logs de auditoria:** Cada revogação registra motivo no campo `ReasonRevoked` (ex: "Rotated", "Revoked by user", "Attempted reuse").
 
 Observações para desenvolvedores
-- Para testes de integração o controller aceita o token via body, o que facilita cenários de teste com `WebApplicationFactory`.
-- Campos relacionados no modelo `RefreshToken`: `TokenHash`, `UserId`, `ExpiresAt`, `CreatedAt`, `RevokedAt`, `ReplacedByTokenHash`.
+- **Suporte dual (cookie + body):** Para facilitar testes de integração, os endpoints `/refresh` e `/revoke` aceitam token via body JSON como fallback. Em produção, preferir sempre cookies.
+- **TestConstants:** Testes usam constantes centralizadas (`TestConstants`).
+- **Campos do modelo `RefreshToken`:** `TokenHash`, `UserId`, `ExpiresAt`, `CreatedAt`, `RevokedAt`, `ReplacedByTokenHash`, `ReasonRevoked`.
  
 
 ### Melhorias de Segurança (opcionais)
 
-Algumas melhorias adicionais que você pode considerar para reforçar a segurança e a observabilidade das sessões:
+Melhorias adicionais que você pode considerar para reforçar a segurança e observabilidade das sessões:
 
-- Registrar o IP do cliente (por exemplo, em um modelo separado de auditoria) — útil para auditoria e investigação, mas com implicações de privacidade. No projeto atual o modelo `RefreshToken` não armazena IPs por padrão para evitar coletar dados pessoais sem necessidade.
-- Implementar identificação amigável de sessão via `DeviceName` (opcional fornecido pelo cliente) e armazenar o `User-Agent`. Isso permite ao usuário visualizar e revogar sessões específicas no painel de conta.
-- Como alternativa à coleta de IP, considere coletar metadados opcionais (device name, truncated user-agent) e tornar esse logging configurável via `RefreshTokenSettings.LogClientInfo`.
+#### Auditoria de IP (com considerações de privacidade)
+- **Por que não está implementado:** Para respeitar privacidade (LGPD/GDPR), não coletamos IPs por padrão.
+- **Como adicionar (se necessário):** Criar modelo `RefreshTokenAudit` separado com `IP`, `TokenId`, `Timestamp` e retenção limitada (ex: 30 dias).
+- **Casos de uso válidos:** Detecção de fraude, investigação de segurança (com consentimento e base legal adequada).
+
+#### Identificação de Sessões (melhor UX)
+- **Device Name (opcional):** Cliente pode enviar nome amigável ("iPhone de João", "Chrome no Trabalho").
+- **User-Agent truncado:** Armazenar apenas sistema operacional e navegador (sem versões específicas que identifiquem dispositivo único).
+- **Benefício:** Usuário pode visualizar e revogar sessões específicas no painel de conta ("Encerrar sessão do iPhone").
+- **Implementação sugerida:** Adicionar campos `DeviceName` e `UserAgentInfo` no modelo `RefreshToken`; tornar opcional via configuração.
+
+#### Metadados Opcionais com Consentimento
+- Criar `RefreshTokenSettings.CollectDeviceInfo` (padrão: `false`).
+- Se habilitado, coletar apenas informações não-sensíveis e anonimizar após período de retenção.
 
 
 ### Melhorias para SSR (Server-Side Rendering)
@@ -561,7 +599,7 @@ export default async function PetsPage({ params, searchParams }) {
 
 ## 🧪 Testes
 
-O projeto possui cobertura de **87.8%** com 150 testes:
+O projeto possui cobertura de **87.8%** com **203 testes** passando:
 
 ### Executar Testes
 ```bash
@@ -574,6 +612,9 @@ dotnet test --filter "FullyQualifiedName~PetHub.Tests.UnitTests"
 # Apenas testes de integração
 dotnet test --filter "FullyQualifiedName~PetHub.Tests.IntegrationTests"
 
+# Testes específicos de Refresh Token
+dotnet test --filter "FullyQualifiedName~RefreshTokenTests"
+
 # Com cobertura de código
 dotnet test --collect:"XPlat Code Coverage" --results-directory:"./TestResults"
 
@@ -582,8 +623,22 @@ reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"Tes
 ```
 
 ### Estrutura de Testes
-- **Integration Tests (125):** Testes de API end-to-end
-- **Unit Tests (25):** Testes de lógica isolada (PasswordHelper, etc.)
+- **Integration Tests (178):** Testes de API end-to-end
+  - **AuthController (11 testes):** Autenticação JWT + Refresh Token completo
+    - Login com cookie HttpOnly
+    - Refresh token com rotação automática
+    - Detecção de reutilização de token (revoga todas as sessões)
+    - Revogação explícita de token
+    - Validação de tokens inválidos/expirados
+  - **PetsController:** Busca, filtros, criação, edição, deleção
+  - **UsersController:** CRUD, perfil, favoritos
+- **Unit Tests (25):** Testes de lógica isolada (PasswordHelper, RefreshTokenHelper, etc.)
+
+### Boas Práticas de Teste
+- Uso de `TestConstants` para centralização de dados de teste
+- `WebApplicationFactory` para testes de integração com banco in-memory
+- FluentAssertions para asserções expressivas
+- Isolamento total entre testes (cada teste usa instância isolada do banco)
 
 ## 🤝 Contribuindo
 
