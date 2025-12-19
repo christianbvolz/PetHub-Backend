@@ -252,6 +252,8 @@ public static class TestConstants
         // Auth paths
         public const string AuthRegister = "/api/auth/register";
         public const string AuthLogin = "/api/auth/login";
+        public const string AuthRefresh = "/api/auth/refresh";
+        public const string AuthRevoke = "/api/auth/revoke";
 
         // Pet paths
         public const string Pets = "/api/pets";

@@ -97,6 +97,14 @@ public class AuthController(
     /// <returns>A new JWT token and user data.</returns>
     /// <response code="200">Token refreshed successfully.</response>
     /// <response code="400">Invalid or expired refresh token.</response>
+    /// <remarks>
+    /// ⚠️ Security Best Practice: This endpoint accepts refresh tokens via both the request body and HttpOnly cookies.
+    /// In production, clients should rely exclusively on the HttpOnly cookie mechanism to prevent XSS attacks.
+    /// The request body option is provided primarily for testing and development purposes.
+    ///
+    /// Token Rotation: Upon successful refresh, the old refresh token is revoked and a new one is issued.
+    /// This implements refresh token rotation to enhance security.
+    /// </remarks>
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -144,6 +152,13 @@ public class AuthController(
     /// <returns>A success message.</returns>
     /// <response code="200">Token revoked successfully.</response>
     /// <response code="400">Invalid refresh token.</response>
+    /// <remarks>
+    /// ⚠️ Security Best Practice: This endpoint accepts refresh tokens via both the request body and HttpOnly cookies.
+    /// In production, clients should rely exclusively on the HttpOnly cookie mechanism to prevent XSS attacks.
+    /// The request body option is provided primarily for testing and development purposes.
+    ///
+    /// After revocation, the HttpOnly cookie is deleted from the client.
+    /// </remarks>
     [HttpPost("revoke")]
     [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
