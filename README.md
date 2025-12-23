@@ -53,7 +53,19 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
 - Campos opcionais: Nome, Idade (0 = desconhecida)
 - Relacionamento automático com User (temporariamente hardcoded - userId=1)
 - Retorna Location header apontando para o pet criado
+ - Retorna Location header apontando para o pet criado
 
+#### ✅ **Favoritar Pet (POST /api/pets/{id}/favorite, DELETE /api/pets/{id}/favorite, GET /api/pets/me/favorites)**
+- Usuário autenticado pode favoritar e remover favoritos de pets.
+- Comportamento idempotente: favoritar o mesmo pet múltiplas vezes não cria duplicatas.
+- Endpoints:
+  - `POST /api/pets/{id}/favorite` — adiciona o pet aos favoritos do usuário autenticado.
+  - `DELETE /api/pets/{id}/favorite` — remove o pet dos favoritos do usuário autenticado.
+  - `GET /api/pets/me/favorites` — lista os pets favoritados pelo usuário.
+- Implementação:
+  - Métodos do repositório: `AddFavoriteAsync`, `RemoveFavoriteAsync`, `GetUserFavoritePetsAsync`.
+  - Armazenamento no banco via entidade `PetFavorite` (UserId, PetId).
+  - Testes de integração adicionados para favoritar, desfavoritar e idempotência.
 ### 📊 Sistema de Tags
 - **Categorias:** Color (Cor), Pattern (Padrão), Coat (Pelagem)
 - Permite classificação flexível dos pets
@@ -96,11 +108,11 @@ Compatibilidade: removemos a emissão separada de `ClaimTypes.NameIdentifier` no
 - POST /api/pets requer autenticação
 - Middleware de autenticação configurado globalmente
 
-### 💬 Comunicação & Adoção (Estrutura Base)
+## 💬 Comunicação & Adoção (Estrutura Base)
+
 - **Chat em Tempo Real:** SignalR configurado
 - **Pedidos de Adoção:** Modelo de dados pronto
-- **Favoritos:** Estrutura preparada
-
+- **Favoritos:** Implementado — endpoints para favoritar, desfavoritar e listar favoritos por usuário; métodos do repositório `AddFavoriteAsync`, `RemoveFavoriteAsync`, `GetUserFavoritePetsAsync` e testes de integração adicionados.
 ## 🧪 Testes
 
 O projeto possui uma suite completa de **43 testes de integração** com 100% de aprovação:
@@ -367,6 +379,10 @@ ASPNETCORE_ENVIRONMENT=Production
 | `POST` | `/api/pets` | Criar novo pet | ✅ Implementado |
 | `PATH` | `/api/pets/{id}` | Atualizar pet | ✅ Implementado |
 | `DELETE` | `/api/pets/{id}` | Remover pet | ✅ Implementado |
+
+| `POST` | `/api/pets/{id}/favorite` | Adicionar pet aos favoritos do usuário autenticado | ✅ Implementado |
+| `DELETE` | `/api/pets/{id}/favorite` | Remover favorito do usuário autenticado | ✅ Implementado |
+| `GET` | `/api/pets/me/favorites` | Listar pets favoritados do usuário | ✅ Implementado |
 
 ### 🔐 Autenticação
 
