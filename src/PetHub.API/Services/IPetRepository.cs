@@ -13,6 +13,9 @@ public interface IPetRepository
     Task<Pet?> UpdateAsync(int id, UpdatePetDto dto, Guid userId);
     Task<bool> DeleteAsync(int id, Guid userId);
     Task<List<Pet>> GetUserPetsAsync(Guid userId);
+    Task<bool> AddFavoriteAsync(Guid userId, int petId);
+    Task<bool> RemoveFavoriteAsync(Guid userId, int petId);
+    Task<List<Pet>> GetUserFavoritePetsAsync(Guid userId);
     Task<bool> ValidateSpeciesExistsAsync(int speciesId);
     Task<bool> ValidateBreedBelongsToSpeciesAsync(int breedId, int speciesId);
     Task<List<int>> ValidateTagsExistAsync(List<int> tagIds);

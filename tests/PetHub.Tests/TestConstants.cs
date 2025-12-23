@@ -259,8 +259,11 @@ public static class TestConstants
         public const string Pets = "/api/pets";
         public const string PetsSearch = "/api/pets/search";
         public const string PetsMe = "/api/pets/me";
+        public const string PetsFavorites = "/api/pets/me/favorites";
 
         public static string PetById(int petId) => $"/api/pets/{petId}";
+
+        public static string PetFavorite(int petId) => $"/api/pets/{petId}/favorite";
 
         // User paths
         public const string UsersMe = "/api/users/me";

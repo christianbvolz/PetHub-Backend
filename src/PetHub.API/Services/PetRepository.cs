@@ -357,4 +357,57 @@ public class PetRepository(AppDbContext context) : IPetRepository
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
     }
+
+    public async Task<bool> AddFavoriteAsync(Guid userId, int petId)
+    {
+        // Ensure pet exists
+        var pet = await context.Pets.FindAsync(petId);
+        if (pet == null)
+            return false;
+
+        // Check if already favorited
+        var exists = await context.PetFavorites.AnyAsync(pf =>
+            pf.UserId == userId && pf.PetId == petId
+        );
+        if (exists)
+            return true; // idempotent
+
+        var favorite = new PetFavorite { UserId = userId, PetId = petId };
+        context.PetFavorites.Add(favorite);
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveFavoriteAsync(Guid userId, int petId)
+    {
+        var fav = await context.PetFavorites.FirstOrDefaultAsync(pf =>
+            pf.UserId == userId && pf.PetId == petId
+        );
+        if (fav == null)
+            return false;
+
+        context.PetFavorites.Remove(fav);
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<Pet>> GetUserFavoritePetsAsync(Guid userId)
+    {
+        return await context
+            .Pets.Join(
+                context.PetFavorites.Where(pf => pf.UserId == userId),
+                p => p.Id,
+                pf => pf.PetId,
+                (p, pf) => p
+            )
+            .Include(p => p.User)
+            .Include(p => p.Species)
+            .Include(p => p.Breed)
+            .Include(p => p.Images)
+            .Include(p => p.PetTags)
+                .ThenInclude(pt => pt.Tag)
+            .AsSplitQuery()
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+    }
 }

@@ -257,4 +257,74 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
 
         return Success(pets.Select(p => p.ToResponseDto()).ToList());
     }
+
+    /// <summary>
+    /// Adds the specified pet to the authenticated user's favorites
+    /// </summary>
+    /// <param name="id">Pet ID</param>
+    /// <returns>Success confirmation</returns>
+    [HttpPost("{id}/favorite")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<object>>> AddFavorite(int id)
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value;
+
+        var success = await petRepository.AddFavoriteAsync(userId, id);
+
+        if (!success)
+            return NotFound("Pet not found.");
+
+        return Success(new { }, "Pet favorited successfully.");
+    }
+
+    /// <summary>
+    /// Removes the specified pet from the authenticated user's favorites
+    /// </summary>
+    /// <param name="id">Pet ID</param>
+    /// <returns>Success confirmation</returns>
+    [HttpDelete("{id}/favorite")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<object>>> RemoveFavorite(int id)
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value;
+
+        var success = await petRepository.RemoveFavoriteAsync(userId, id);
+
+        if (!success)
+            return NotFound("Favorite not found.");
+
+        return Success(new { }, "Pet unfavorited successfully.");
+    }
+
+    /// <summary>
+    /// Retrieves all favorite pets of the authenticated user
+    /// </summary>
+    [HttpGet("me/favorites")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<List<PetResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<List<PetResponseDto>>>> GetMyFavorites()
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null) // Returns 401 Unauthorized if token is invalid
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value;
+
+        var pets = await petRepository.GetUserFavoritePetsAsync(userId);
+
+        return Success(pets.Select(p => p.ToResponseDto()).ToList());
+    }
 }
