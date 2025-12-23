@@ -12,4 +12,5 @@ public interface IUserRepository
     Task<bool> UpdateAsync(Guid id, PatchUserDto dto);
     Task<bool> EmailExistsAsync(string email, Guid? excludeUserId = null);
     Task<User?> AuthenticateAsync(string email, string password);
+    Task<bool> DeleteAsync(Guid id);
 }

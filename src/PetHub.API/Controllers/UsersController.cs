@@ -91,4 +91,33 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
             return Error(ex.Message);
         }
     }
+
+    /// <summary>
+    /// Deletes the authenticated user's account
+    /// </summary>
+    /// <returns>Indicates deletion success</returns>
+    /// <response code="200">User deleted successfully</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    /// <response code="404">User not found</response>
+    [HttpDelete("me")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteCurrentUser()
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null)
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value;
+
+        var success = await userRepository.DeleteAsync(userId);
+
+        if (!success)
+        {
+            return NotFound("User not found.");
+        }
+
+        return Success(new { }, "User deleted successfully.");
+    }
 }

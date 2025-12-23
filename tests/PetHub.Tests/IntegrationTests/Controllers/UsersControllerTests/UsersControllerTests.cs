@@ -175,4 +175,23 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
         // Assert
         response.ShouldBeBadRequest();
     }
+
+    [Fact]
+    public async Task DeleteCurrentUser_WithValidToken_DeletesUserAndSubsequentGetReturnsNotFound()
+    {
+        // Act
+        var response = await _client.DeleteAsync(TestConstants.ApiPaths.UsersMe);
+
+        // Assert
+        response.ShouldBeOk();
+
+        var apiResponse = await response.ReadApiResponseAsync<object>();
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeTrue();
+        apiResponse.Message.Should().Be("User deleted successfully.");
+
+        // Subsequent request to get current user should return NotFound
+        var getResponse = await _client.GetAsync(TestConstants.ApiPaths.UsersMe);
+        getResponse.ShouldBeNotFound();
+    }
 }

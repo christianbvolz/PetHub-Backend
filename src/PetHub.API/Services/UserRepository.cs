@@ -132,4 +132,17 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
         return passwordValid ? user : null;
     }
+
+    public async Task<bool> DeleteAsync(Guid id)
+    {
+        var user = await GetByIdAsync(id);
+        if (user == null)
+        {
+            return false;
+        }
+
+        context.Users.Remove(user);
+        await context.SaveChangesAsync();
+        return true;
+    }
 }

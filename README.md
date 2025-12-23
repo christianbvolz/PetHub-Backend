@@ -363,9 +363,10 @@ ASPNETCORE_ENVIRONMENT=Production
 |--------|----------|-----------|--------|
 | `GET` | `/api/pets/search` | Buscar pets com filtros | ✅ Implementado |
 | `GET` | `/api/pets/{id}` | Detalhes de um pet | ✅ Implementado |
+| `GET` | `/api/pets/me` | Listar pets do usuário | ✅ Implementado |
 | `POST` | `/api/pets` | Criar novo pet | ✅ Implementado |
-| `PUT` | `/api/pets/{id}` | Atualizar pet | 🚧 Planejado |
-| `DELETE` | `/api/pets/{id}` | Remover pet | 🚧 Planejado |
+| `PATH` | `/api/pets/{id}` | Atualizar pet | ✅ Implementado |
+| `DELETE` | `/api/pets/{id}` | Remover pet | ✅ Implementado |
 
 ### 🔐 Autenticação
 
@@ -380,10 +381,9 @@ ASPNETCORE_ENVIRONMENT=Production
 
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| `GET` | `/api/users` | Listar usuários | 🚧 Planejado |
 | `GET` | `/api/users/{id}` | Perfil do usuário | ✅ Implementado |
 | `PATCH` | `/api/users/{id}` | Atualizar perfil (parcial) | ✅ Implementado |
-| `DELETE` | `/api/users/{id}` | Remover usuário | 🚧 Planejado |
+| `DELETE` | `/api/users/{id}` | Remover usuário | ✅ Implementado |
 
 ### 💬 Chat & Adoção
 
