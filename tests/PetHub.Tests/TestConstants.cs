@@ -268,23 +268,28 @@ public static class TestConstants
         // User paths
         public const string UsersMe = "/api/users/me";
 
-        // Adoption paths
-        public const string AdoptionRequests = "/api/adoption/requests";
+        // Adoption Request paths
+        public const string AdoptionRequests = "/api/adoption-requests";
+        public const string AdoptionRequestsSent = "/api/adoption-requests/me/sent";
+        public const string AdoptionRequestsReceived = "/api/adoption-requests/me/received";
 
         public static string AdoptionRequestById(int requestId) =>
-            $"/api/adoption/requests/{requestId}";
+            $"/api/adoption-requests/{requestId}";
 
-        public static string AdoptionRequestApprove(int requestId) =>
-            $"/api/adoption/requests/{requestId}/approve";
-
-        public static string AdoptionRequestReject(int requestId) =>
-            $"/api/adoption/requests/{requestId}/reject";
+        public static string AdoptionRequestStatus(int requestId) =>
+            $"/api/adoption-requests/{requestId}/status";
 
         public static string PetAdoptionRequests(int petId) =>
-            $"/api/adoption/pets/{petId}/requests";
+            $"/api/adoption-requests/pet/{petId}";
+
+        public static string PetAdoptionRequestsPending(int petId) =>
+            $"/api/adoption-requests/pet/{petId}/pending";
+
+        public static string ApproveAdoptionRequest(int requestId) =>
+            $"/api/adoption-requests/{requestId}/approve";
 
         public static string MarkPetAsAdopted(int petId) =>
-            $"/api/adoption/pets/{petId}/mark-adopted";
+            $"/api/adoption-requests/pet/{petId}/mark-adopted";
     }
 
     /// <summary>

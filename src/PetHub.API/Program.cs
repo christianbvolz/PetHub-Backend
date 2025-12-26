@@ -198,7 +198,8 @@ builder
 // Custom Services (Repositories, etc.)
 builder.Services.AddScoped<IPetRepository, PetRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
+builder.Services.AddScoped<IAdoptionRequestRepository, AdoptionRequestRepository>();
+builder.Services.AddScoped<IAdoptionService, AdoptionService>();
 builder.Services.AddSingleton<IJwtService, JwtService>(); // Singleton: stateless service, thread-safe
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 

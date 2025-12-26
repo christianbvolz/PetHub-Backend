@@ -14,6 +14,8 @@ public class AdoptionRequest
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime? UpdatedAt { get; set; }
+
     // --- RELATIONSHIPS ---
 
     // Which Pet?

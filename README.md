@@ -379,7 +379,6 @@ ASPNETCORE_ENVIRONMENT=Production
 | `POST` | `/api/pets` | Criar novo pet | ✅ Implementado |
 | `PATH` | `/api/pets/{id}` | Atualizar pet | ✅ Implementado |
 | `DELETE` | `/api/pets/{id}` | Remover pet | ✅ Implementado |
-
 | `POST` | `/api/pets/{id}/favorite` | Adicionar pet aos favoritos do usuário autenticado | ✅ Implementado |
 | `DELETE` | `/api/pets/{id}/favorite` | Remover favorito do usuário autenticado | ✅ Implementado |
 | `GET` | `/api/pets/me/favorites` | Listar pets favoritados do usuário | ✅ Implementado |
@@ -405,7 +404,15 @@ ASPNETCORE_ENVIRONMENT=Production
 
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| `POST` | `/api/adoption-requests` | Solicitar adoção | 🚧 Planejado |
+| `POST` | `/api/adoption-requests` | Criar pedido de adoção para um pet | ✅ Implementado |
+| `GET` | `/api/adoption-requests/{id}` | Obter detalhes de um pedido (adotante ou dono) | ✅ Implementado |
+| `GET` | `/api/adoption-requests/me/sent` | Listar pedidos enviados pelo usuário | ✅ Implementado |
+| `GET` | `/api/adoption-requests/me/received` | Listar pedidos recebidos (pets do usuário) | ✅ Implementado |
+| `GET` | `/api/adoption-requests/pet/{petId}` | Listar todos os pedidos de um pet (apenas dono) | ✅ Implementado |
+| `GET` | `/api/adoption-requests/pet/{petId}/pending` | Listar pedidos pendentes de um pet (apenas dono) | ✅ Implementado |
+| `PATCH` | `/api/adoption-requests/{id}/status` | Atualizar status do pedido (apenas dono) | ✅ Implementado |
+| `POST` | `/api/adoption-requests/{id}/approve` | Aprovar pedido e marcar pet como adotado | ✅ Implementado |
+| `POST` | `/api/adoption-requests/pet/{petId}/mark-adopted` | Marcar pet como adotado (fora da plataforma) | ✅ Implementado |
 | `SignalR` | `/hubs/chat` | Chat em tempo real | 🚧 Implementado (base) |
 
 ## 🎯 Próximos Passos
@@ -422,8 +429,8 @@ ASPNETCORE_ENVIRONMENT=Production
   - ✅ Background service para limpeza de tokens expirados
   - ✅ 11 testes de integração cobrindo todos os cenários
   - ✅ Documentação de segurança em DTOs e endpoints
-- [ ] Implementar sistema de favoritos
-- [ ] Completar fluxo de pedidos de adoção
+- [x]  **Implementar sistema de favoritos** ✅
+- [x] **Completar fluxo de pedidos de adoção** ✅
 - [ ] Adicionar upload de imagens real (S3/Cloudinary)
 - [ ] Implementar filtros geográficos (proximidade)
 - [ ] Adicionar rate limiting
