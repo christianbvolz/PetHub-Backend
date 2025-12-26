@@ -1,7 +1,6 @@
 using System.Net;
 using FluentAssertions;
 using PetHub.API.DTOs.AdoptionRequest;
-using PetHub.API.DTOs.Common;
 using PetHub.API.Enums;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;

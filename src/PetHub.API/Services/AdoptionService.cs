@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using PetHub.API.Data;
 using PetHub.API.Enums;
 using PetHub.API.Models;
