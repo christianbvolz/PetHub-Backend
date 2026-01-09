@@ -1,20 +1,23 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using PetHub.API.Data;
+using PetHub.API.Services;
 
 namespace PetHub.Tests.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Custom WebApplicationFactory for integration tests
-/// Configures in-memory database and test environment
 /// </summary>
 public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName;
 
+    public Mock<ICloudinaryService>? MockCloudinaryService { get; set; }
+
     public PetHubWebApplicationFactory()
     {
-        // Generate a unique database name for each factory instance
+        // Generate unique database name for test isolation
         _databaseName = $"PetHubTestDb_{Guid.NewGuid()}";
     }
 
@@ -38,12 +41,38 @@ public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(descriptor);
             }
 
-            // Add in-memory database for testing
-            // Use a unique database name to isolate tests
+            // Add InMemory database for testing
+            // Note: InMemory does NOT support real transactions
+            // Transactions in code will be ignored (with warnings)
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseInMemoryDatabase(_databaseName);
+                // Suppress transaction warnings in tests
+                options.ConfigureWarnings(w =>
+                    w.Ignore(
+                        Microsoft
+                            .EntityFrameworkCore
+                            .Diagnostics
+                            .InMemoryEventId
+                            .TransactionIgnoredWarning
+                    )
+                );
             });
+
+            // Replace real Cloudinary service with mock if provided
+            if (MockCloudinaryService != null)
+            {
+                var cloudinaryDescriptor = services.SingleOrDefault(d =>
+                    d.ServiceType == typeof(ICloudinaryService)
+                );
+
+                if (cloudinaryDescriptor != null)
+                {
+                    services.Remove(cloudinaryDescriptor);
+                }
+
+                services.AddSingleton(MockCloudinaryService.Object);
+            }
         });
 
         builder.UseEnvironment("Testing");

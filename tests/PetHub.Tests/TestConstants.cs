@@ -290,6 +290,12 @@ public static class TestConstants
 
         public static string MarkPetAsAdopted(int petId) =>
             $"/api/adoption-requests/pet/{petId}/mark-adopted";
+
+        // Pet Image paths
+        public static string PetImages(int petId) => $"/api/pets/{petId}/images";
+
+        public static string PetImageById(int petId, int imageId) =>
+            $"/api/pets/{petId}/images/{imageId}";
     }
 
     /// <summary>
@@ -302,6 +308,11 @@ public static class TestConstants
         public const string Image2 = "https://example.com/pet2.jpg";
         public const string Image3 = "https://example.com/pet3.jpg";
         public const string Updated = "https://example.com/updated.jpg";
+
+        // Cloudinary-specific URLs for testing
+        public const string CloudinaryUploadedImage =
+            "https://res.cloudinary.com/demo/image/upload/v1234567890/pets/1/uploaded-image.jpg";
+        public const string TestImageFileName = "test-image.jpg";
 
         public static List<string> SingleImage() => new() { Default };
 

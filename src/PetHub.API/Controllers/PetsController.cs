@@ -369,7 +369,7 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Forbid(ex.Message);
+            return ForbiddenResponse(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
@@ -416,7 +416,7 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Forbid(ex.Message);
+            return ForbiddenResponse(ex.Message);
         }
         catch (InvalidOperationException ex)
         {

@@ -528,7 +528,11 @@ public class PetRepository(AppDbContext context, ICloudinaryService cloudinarySe
             var fullPublicId = string.IsNullOrEmpty(folder) ? publicId : $"{folder}/{publicId}";
 
             // Delete from Cloudinary first
-            await cloudinaryService.DeleteImageAsync(fullPublicId);
+            var deletionResult = await cloudinaryService.DeleteImageAsync(fullPublicId);
+            if (!deletionResult)
+            {
+                throw new InvalidOperationException("Cloudinary deletion failed.");
+            }
 
             // Delete from database
             context.PetImages.Remove(image);
