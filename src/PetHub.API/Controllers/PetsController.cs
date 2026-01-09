@@ -341,6 +341,7 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
     /// </remarks>
     [HttpPost("{petId}/images")]
     [Authorize]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<PetImageResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -348,7 +349,7 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<PetImageResponseDto>>> UploadPetImage(
         int petId,
-        [FromForm] IFormFile file
+        IFormFile file
     )
     {
         var userIdResult = GetUserIdOrUnauthorized();
