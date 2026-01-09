@@ -3,7 +3,7 @@
 O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de estimação com donos ou abrigos que possuem animais para adoção. Este repositório contém o Backend (API) da aplicação, construído com tecnologias modernas do ecossistema .NET.
 
 [![CI](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/christianbvolz/PetHub-Backend/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-203%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-208%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-87.8%25-brightgreen)](tests/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -17,7 +17,7 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
 - **Tempo Real:** SignalR (Para o sistema de Chat)
 - **Segurança:** BCrypt (Hash de senhas)
 - **Documentação:** Swagger / OpenAPI (Swashbuckle 6.8.1)
-- **Testes:** xUnit + FluentAssertions (203 testes: 178 integration + 25 unit tests)
+- **Testes:** xUnit + FluentAssertions (208 testes: integração + unitários)
 - **Cobertura:** 87.8% de cobertura de código (Coverlet)
 - **Padrões:** Repository Pattern, DTOs, Dependency Injection
 - **CI/CD:** GitHub Actions com verificação de cobertura
@@ -67,39 +67,27 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
   - Armazenamento no banco via entidade `PetFavorite` (UserId, PetId).
   - Testes de integração adicionados para favoritar, desfavoritar e idempotência.
 
-#### ✅ **Upload de Imagens com Cloudinary CDN**
+#### ✅ **Upload e Deleção de Imagens (fluxo atual)**
 
-Sistema completo de upload e gerenciamento de imagens de pets integrado com [Cloudinary](https://cloudinary.com/).
+Fluxo implementado para upload e remoção de imagens de pets, com foco em consistência e limpeza em caso de falha:
 
-**📸 Endpoints:**
-- `POST /api/pets/{petId}/images` — Upload de imagens (requer autenticação)
-- `GET /api/pets/{petId}/images` — Listar imagens do pet (público)
-- `DELETE /api/pets/{petId}/images/{imageId}` — Deletar imagem (requer autenticação)
+- **Transações:** o repositório inicia uma transação do banco ao salvar/excluir metadados; em caso de exceção, a transação é revertida e o repositório tenta remover a imagem já enviada no Cloudinary (limpeza best-effort).
+- **API simplificada:** cada requisição aceita **apenas 1 imagem** (`multipart/form-data` com campo `file`). Para múltiplas imagens, o cliente deve chamar o endpoint várias vezes (máxima de 5 imagens por pet).
+- **Validações aplicadas:** tipo de arquivo permitido (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`), tamanho máximo 5MB, proprietário do pet (apenas owner pode alterar imagens), limite de 5 imagens por pet.
 
-**✨ Características:**
-- ✅ Upload de múltiplas imagens (máximo 5 por pet)
-- ✅ Validação de tipo: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
-- ✅ Validação de tamanho: máximo 5MB por arquivo
-- ✅ Redimensionamento automático: 1200x1200 (mantém proporção)
-- ✅ Otimização automática de qualidade
-- ✅ URLs servidas via CDN global
-- ✅ Segurança: apenas o dono do pet pode upload/deletar
-- ✅ Deleção remove do Cloudinary e banco de dados
+Endpoints principais:
+- `POST /api/pets/{petId}/images` — upload de uma imagem (autenticado)
+- `GET /api/pets/{petId}/images` — lista imagens do pet (público)
+- `DELETE /api/pets/{petId}/images/{imageId}` — deleta imagem (autenticado)
 
-**⚙️ Configuração:**
+Comportamento de falha e limpeza:
+- Ao falhar o upload no Cloudinary após salvar no DB, o repositório faz rollback da transação e tenta deletar a imagem recém-criada no Cloudinary (best-effort). Se a deleção falhar, o sistema registra e deixa a limpeza para processos posteriores.
 
-Credenciais mínimas em `appsettings.json`:
-```json
-{
-  "Cloudinary": {
-    "CloudName": "YOUR_CLOUD_NAME"
-  }
-}
-```
 
 As chaves sensíveis `ApiKey` e `ApiSecret` devem ser fornecidas via variáveis de ambiente (recomendado). Configure no seu ambiente ou no arquivo `.env`:
 
 ```
+CLOUDINARY_CLOUD_NAME=yourCloudName
 CLOUDINARY_API_KEY=yourApiKey
 CLOUDINARY_API_SECRET=yourApiSecret
 ```
@@ -108,18 +96,11 @@ CLOUDINARY_API_SECRET=yourApiSecret
 
 **🧪 Exemplo de Upload (cURL):**
 ```bash
-curl -X POST "http://localhost:5000/api/pets/1/images" \
+curl -X POST "http://localhost:5096/api/pets/1/images" \
   -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "files=@/path/to/image.jpg"
+  -F "file=@/path/to/image.jpg"
 ```
 
-**📚 Documentação Completa:** [CLOUDINARY_INTEGRATION.md](CLOUDINARY_INTEGRATION.md)
-
-**🏗️ Arquitetura:**
-- **Serviço:** `CloudinaryService` com validações e transformações
-- **DTO:** `PetImageResponseDto` com URL e metadata
-- **Configuração:** `CloudinarySettings` com Options Pattern
-- **Pacote:** CloudinaryDotNet 1.27.9
 
 ### 📊 Sistema de Tags
 - **Categorias:** Color (Cor), Pattern (Padrão), Coat (Pelagem)
@@ -170,12 +151,12 @@ Compatibilidade: removemos a emissão separada de `ClaimTypes.NameIdentifier` no
 - **Favoritos:** Implementado — endpoints para favoritar, desfavoritar e listar favoritos por usuário; métodos do repositório `AddFavoriteAsync`, `RemoveFavoriteAsync`, `GetUserFavoritePetsAsync` e testes de integração adicionados.
 ## 🧪 Testes
 
-O projeto possui uma suite completa de **43 testes de integração** com 100% de aprovação:
+O projeto possui uma suíte de testes automatizados composta por **208 testes** (unitários + integração). Na máquina de CI utilizada no repositório, todos os testes estão passando.
 
-- **GetPet:** 11 testes (validação de ID, relacionamentos, erros)
-- **SearchPets:** 14 testes (filtros, paginação, ordenação)
-- **CreatePet:** 18 testes (validações, relacionamentos, **autenticação JWT**, autorização)
+- **Testes de integração principais:** filtragem, criação e leitura de pets, autenticação, upload/deleção de imagens, favoritos e chat.
+- **Testes de upload/deleção de imagens:** há **19 testes de integração** cobrindo cenários de sucesso, autorização (owner vs outro usuário), validações (tipo, tamanho, máximo de imagens), falhas no Cloudinary e limpeza/rollback do repositório.
 
+Comandos úteis:
 ```bash
 # Executar todos os testes
 dotnet test
@@ -193,9 +174,8 @@ dotnet test --logger "console;verbosity=detailed"
 - ✅ Cenários de sucesso
 - ✅ Validações de entidades relacionadas
 - ✅ Casos de erro (404, 400, 500)
-- ✅ Campos opcionais e valores padrão
-- ✅ Integridade dos dados e relacionamentos
-- ✅ Preparação para autenticação (TODO)
+- ✅ Fluxos de autenticação e autorização
+- ✅ Integração com Cloudinary (mocked) e limpeza em falhas
 
 ## 🛠️ Configuração do Ambiente
 
@@ -432,11 +412,15 @@ ASPNETCORE_ENVIRONMENT=Production
 | `GET` | `/api/pets/{id}` | Detalhes de um pet | ✅ Implementado |
 | `GET` | `/api/pets/me` | Listar pets do usuário | ✅ Implementado |
 | `POST` | `/api/pets` | Criar novo pet | ✅ Implementado |
-| `PATH` | `/api/pets/{id}` | Atualizar pet | ✅ Implementado |
+| `PATCH` | `/api/pets/{id}` | Atualizar pet | ✅ Implementado |
 | `DELETE` | `/api/pets/{id}` | Remover pet | ✅ Implementado |
 | `POST` | `/api/pets/{id}/favorite` | Adicionar pet aos favoritos do usuário autenticado | ✅ Implementado |
 | `DELETE` | `/api/pets/{id}/favorite` | Remover favorito do usuário autenticado | ✅ Implementado |
 | `GET` | `/api/pets/me/favorites` | Listar pets favoritados do usuário | ✅ Implementado |
+
+| `POST` | `/api/pets/{petId}/images` | Upload de 1 imagem para o pet (campo `file`) — autenticado | ✅ Implementado |
+| `GET` | `/api/pets/{petId}/images` | Listar imagens do pet (público) | ✅ Implementado |
+| `DELETE` | `/api/pets/{petId}/images/{imageId}` | Deletar imagem do pet — autenticado | ✅ Implementado |
 
 ### 🔐 Autenticação
 
@@ -486,7 +470,7 @@ ASPNETCORE_ENVIRONMENT=Production
   - ✅ Documentação de segurança em DTOs e endpoints
 - [x]  **Implementar sistema de favoritos** ✅
 - [x] **Completar fluxo de pedidos de adoção** ✅
-- [ ] Adicionar upload de imagens real (S3/Cloudinary)
+- [x] **Adicionar upload de imagens real (S3/Cloudinary)** ✅
 - [ ] Implementar filtros geográficos (proximidade)
 - [ ] Adicionar rate limiting
 - [ ] Implementar cache (Redis)
