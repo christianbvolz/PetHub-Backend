@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PetHub.API.Common;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
+using PetHub.API.DTOs.PetImage;
 using PetHub.API.Mappings;
 using PetHub.API.Services;
 
@@ -326,5 +327,124 @@ public class PetsController(IPetRepository petRepository) : ApiControllerBase
         var pets = await petRepository.GetUserFavoritePetsAsync(userId);
 
         return Success(pets.Select(p => p.ToResponseDto()).ToList());
+    }
+
+    /// <summary>
+    /// Uploads a single image for a pet (maximum 5 images per pet)
+    /// </summary>
+    /// <param name="petId">Pet ID</param>
+    /// <param name="file">Image file to upload</param>
+    /// <returns>Uploaded image data</returns>
+    /// <remarks>
+    /// To upload multiple images, call this endpoint multiple times.
+    /// This approach ensures better transaction consistency and simpler error handling.
+    /// </remarks>
+    [HttpPost("{petId}/images")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PetImageResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PetImageResponseDto>>> UploadPetImage(
+        int petId,
+        [FromForm] IFormFile file
+    )
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null)
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value;
+
+        // Validate file
+        if (file == null)
+            return BadRequest("No file provided.");
+
+        try
+        {
+            var uploadedImage = await petRepository.UploadPetImageAsync(petId, file, userId);
+
+            return Success(uploadedImage.ToDto(), "Image uploaded successfully.");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                $"Error uploading image: {ex.Message}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Deletes an image from a pet
+    /// </summary>
+    /// <param name="petId">Pet ID</param>
+    /// <param name="imageId">Image ID</param>
+    /// <returns>Success confirmation</returns>
+    [HttpDelete("{petId}/images/{imageId}")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<object>>> DeletePetImage(int petId, int imageId)
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result != null)
+            return userIdResult.Result;
+
+        var userId = userIdResult.Value;
+
+        try
+        {
+            await petRepository.DeletePetImageAsync(petId, imageId, userId);
+
+            return Success(new { }, "Image deleted successfully.");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                $"Error deleting image: {ex.Message}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Retrieves all images for a specific pet
+    /// </summary>
+    /// <param name="petId">Pet ID</param>
+    /// <returns>List of pet images</returns>
+    [HttpGet("{petId}/images")]
+    [ProducesResponseType(typeof(ApiResponse<List<PetImageResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<List<PetImageResponseDto>>>> GetPetImages(int petId)
+    {
+        var pet = await petRepository.GetByIdAsync(petId);
+        if (pet == null)
+            return NotFound($"Pet with ID {petId} not found.");
+
+        return Success(pet.Images.Select(img => img.ToDto()).ToList());
     }
 }

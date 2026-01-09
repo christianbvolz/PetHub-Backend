@@ -153,6 +153,26 @@ builder
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+// Cloudinary Configuration (Options Pattern)
+var cloudinaryOptionsBuilder = builder
+    .Services.AddOptions<PetHub.API.Configuration.CloudinarySettings>()
+    .Bind(builder.Configuration.GetSection("Cloudinary"))
+    .Configure(options =>
+    {
+        // Allow CloudName, ApiKey and ApiSecret to be provided via environment variables for security
+        options.CloudName =
+            Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") ?? options.CloudName;
+        options.ApiKey = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? options.ApiKey;
+        options.ApiSecret =
+            Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? options.ApiSecret;
+    });
+
+// Only validate Cloudinary settings on startup in Production
+if (builder.Environment.IsProduction())
+{
+    cloudinaryOptionsBuilder.ValidateDataAnnotations().ValidateOnStart();
+}
+
 // JWT Authentication
 builder
     .Services.AddAuthentication(options =>
@@ -200,6 +220,7 @@ builder.Services.AddScoped<IPetRepository, PetRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdoptionRequestRepository, AdoptionRequestRepository>();
 builder.Services.AddScoped<IAdoptionService, AdoptionService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddSingleton<IJwtService, JwtService>(); // Singleton: stateless service, thread-safe
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 

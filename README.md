@@ -66,6 +66,61 @@ O PetHub é uma plataforma que conecta pessoas que desejam adotar animais de est
   - Métodos do repositório: `AddFavoriteAsync`, `RemoveFavoriteAsync`, `GetUserFavoritePetsAsync`.
   - Armazenamento no banco via entidade `PetFavorite` (UserId, PetId).
   - Testes de integração adicionados para favoritar, desfavoritar e idempotência.
+
+#### ✅ **Upload de Imagens com Cloudinary CDN**
+
+Sistema completo de upload e gerenciamento de imagens de pets integrado com [Cloudinary](https://cloudinary.com/).
+
+**📸 Endpoints:**
+- `POST /api/pets/{petId}/images` — Upload de imagens (requer autenticação)
+- `GET /api/pets/{petId}/images` — Listar imagens do pet (público)
+- `DELETE /api/pets/{petId}/images/{imageId}` — Deletar imagem (requer autenticação)
+
+**✨ Características:**
+- ✅ Upload de múltiplas imagens (máximo 5 por pet)
+- ✅ Validação de tipo: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+- ✅ Validação de tamanho: máximo 5MB por arquivo
+- ✅ Redimensionamento automático: 1200x1200 (mantém proporção)
+- ✅ Otimização automática de qualidade
+- ✅ URLs servidas via CDN global
+- ✅ Segurança: apenas o dono do pet pode upload/deletar
+- ✅ Deleção remove do Cloudinary e banco de dados
+
+**⚙️ Configuração:**
+
+Credenciais mínimas em `appsettings.json`:
+```json
+{
+  "Cloudinary": {
+    "CloudName": "YOUR_CLOUD_NAME"
+  }
+}
+```
+
+As chaves sensíveis `ApiKey` e `ApiSecret` devem ser fornecidas via variáveis de ambiente (recomendado). Configure no seu ambiente ou no arquivo `.env`:
+
+```
+CLOUDINARY_API_KEY=yourApiKey
+CLOUDINARY_API_SECRET=yourApiSecret
+```
+
+**⚠️ IMPORTANTE:** Substitua `YOUR_CLOUD_NAME` pelo nome da sua conta Cloudinary (encontrado no [Dashboard](https://cloudinary.com/console)). Nunca comite suas chaves em repositórios públicos.
+
+**🧪 Exemplo de Upload (cURL):**
+```bash
+curl -X POST "http://localhost:5000/api/pets/1/images" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "files=@/path/to/image.jpg"
+```
+
+**📚 Documentação Completa:** [CLOUDINARY_INTEGRATION.md](CLOUDINARY_INTEGRATION.md)
+
+**🏗️ Arquitetura:**
+- **Serviço:** `CloudinaryService` com validações e transformações
+- **DTO:** `PetImageResponseDto` com URL e metadata
+- **Configuração:** `CloudinarySettings` com Options Pattern
+- **Pacote:** CloudinaryDotNet 1.27.9
+
 ### 📊 Sistema de Tags
 - **Categorias:** Color (Cor), Pattern (Padrão), Coat (Pelagem)
 - Permite classificação flexível dos pets

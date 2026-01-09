@@ -19,4 +19,6 @@ public interface IPetRepository
     Task<bool> ValidateSpeciesExistsAsync(int speciesId);
     Task<bool> ValidateBreedBelongsToSpeciesAsync(int breedId, int speciesId);
     Task<List<int>> ValidateTagsExistAsync(List<int> tagIds);
+    Task<PetImage> UploadPetImageAsync(int petId, IFormFile file, Guid userId);
+    Task<bool> DeletePetImageAsync(int petId, int imageId, Guid userId);
 }

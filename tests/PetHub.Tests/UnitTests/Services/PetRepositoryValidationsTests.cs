@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using PetHub.API.Data;
 using PetHub.API.Services;
 
@@ -17,7 +18,8 @@ public class PetRepositoryValidationsTests : IDisposable
             .Options;
 
         _context = new AppDbContext(options);
-        _repository = new PetRepository(_context);
+        var cloudinaryService = new Mock<ICloudinaryService>();
+        _repository = new PetRepository(_context, cloudinaryService.Object);
     }
 
     public void Dispose()

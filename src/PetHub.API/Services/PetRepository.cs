@@ -7,7 +7,8 @@ using PetHub.API.Models;
 
 namespace PetHub.API.Services;
 
-public class PetRepository(AppDbContext context) : IPetRepository
+public class PetRepository(AppDbContext context, ICloudinaryService cloudinaryService)
+    : IPetRepository
 {
     public async Task<Pet?> GetByIdAsync(int id)
     {
@@ -409,5 +410,140 @@ public class PetRepository(AppDbContext context) : IPetRepository
             .AsSplitQuery()
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
+    }
+
+    public async Task<PetImage> UploadPetImageAsync(int petId, IFormFile file, Guid userId)
+    {
+        // Validate pet exists and user ownership
+        var pet = await context.Pets.Include(p => p.Images).FirstOrDefaultAsync(p => p.Id == petId);
+
+        if (pet == null)
+            throw new InvalidOperationException($"Pet with ID {petId} not found.");
+
+        if (pet.UserId != userId)
+            throw new UnauthorizedAccessException(
+                "You are not authorized to upload images for this pet."
+            );
+
+        // Validate maximum images (5)
+        if (pet.Images.Count >= 5)
+            throw new InvalidOperationException(
+                $"Cannot upload more images. Pet already has {pet.Images.Count} images. Maximum allowed is 5."
+            );
+
+        string? uploadedUrl = null;
+
+        // Start transaction
+        using var transaction = await context.Database.BeginTransactionAsync();
+
+        try
+        {
+            // Upload image to Cloudinary
+            uploadedUrl = await cloudinaryService.UploadImageAsync(file, $"pets/{petId}");
+
+            // Save to database
+            var petImage = new PetImage { PetId = petId, Url = uploadedUrl };
+            context.PetImages.Add(petImage);
+            await context.SaveChangesAsync();
+
+            // Commit transaction
+            await transaction.CommitAsync();
+
+            return petImage;
+        }
+        catch (Exception)
+        {
+            // Rollback transaction
+            await transaction.RollbackAsync();
+
+            // Clean up uploaded image from Cloudinary (if upload succeeded)
+            if (!string.IsNullOrEmpty(uploadedUrl))
+            {
+                try
+                {
+                    // Extract publicId from URL
+                    var urlParts = uploadedUrl.Split('/');
+                    var publicIdWithExtension = string.Join(
+                        "/",
+                        urlParts.SkipWhile(p => p != "upload").Skip(2)
+                    );
+                    var publicId = Path.GetFileNameWithoutExtension(publicIdWithExtension);
+                    var folder = string.Join(
+                        "/",
+                        urlParts.SkipWhile(p => p != "upload").Skip(2).SkipLast(1)
+                    );
+                    var fullPublicId = string.IsNullOrEmpty(folder)
+                        ? publicId
+                        : $"{folder}/{publicId}";
+
+                    // Delete the uploaded image from Cloudinary
+                    await cloudinaryService.DeleteImageAsync(fullPublicId);
+                }
+                catch
+                {
+                    // Best-effort cleanup: if deletion fails, the image becomes orphaned
+                    // In production, consider logging this for manual cleanup or implementing
+                    // a scheduled job to identify and remove orphaned images
+                }
+            }
+
+            throw;
+        }
+    }
+
+    public async Task<bool> DeletePetImageAsync(int petId, int imageId, Guid userId)
+    {
+        // Validate pet exists and user ownership
+        var pet = await context.Pets.Include(p => p.Images).FirstOrDefaultAsync(p => p.Id == petId);
+
+        if (pet == null)
+            throw new InvalidOperationException($"Pet with ID {petId} not found.");
+
+        if (pet.UserId != userId)
+            throw new UnauthorizedAccessException(
+                "You are not authorized to delete images from this pet."
+            );
+
+        // Find the image
+        var image = pet.Images.FirstOrDefault(img => img.Id == imageId);
+        if (image == null)
+            throw new InvalidOperationException($"Image with ID {imageId} not found for this pet.");
+
+        // Start transaction
+        using var transaction = await context.Database.BeginTransactionAsync();
+
+        try
+        {
+            // Extract publicId from Cloudinary URL
+            var urlParts = image.Url.Split('/');
+            var publicIdWithExtension = string.Join(
+                "/",
+                urlParts.SkipWhile(p => p != "upload").Skip(2)
+            );
+            var publicId = Path.GetFileNameWithoutExtension(publicIdWithExtension);
+            var folder = string.Join(
+                "/",
+                urlParts.SkipWhile(p => p != "upload").Skip(2).SkipLast(1)
+            );
+            var fullPublicId = string.IsNullOrEmpty(folder) ? publicId : $"{folder}/{publicId}";
+
+            // Delete from Cloudinary first
+            await cloudinaryService.DeleteImageAsync(fullPublicId);
+
+            // Delete from database
+            context.PetImages.Remove(image);
+            await context.SaveChangesAsync();
+
+            // Commit transaction
+            await transaction.CommitAsync();
+
+            return true;
+        }
+        catch (Exception)
+        {
+            // Rollback transaction
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

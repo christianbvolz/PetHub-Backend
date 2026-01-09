@@ -1,0 +1,43 @@
+### PET IMAGE UPLOAD ENDPOINTS
+### Requires authentication (JWT token)
+
+@baseUrl = http://localhost:5000/api
+@token = your_jwt_token_here
+@petId = 1
+
+### 1. Upload single image to a pet
+POST {{baseUrl}}/pets/{{petId}}/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="dog.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/your/image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 2. Upload multiple images to a pet (max 5 per pet)
+POST {{baseUrl}}/pets/{{petId}}/images
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="dog1.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/dog1.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="dog2.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/dog2.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 3. Get all images for a pet
+GET {{baseUrl}}/pets/{{petId}}/images
+
+### 4. Delete an image from a pet
+@imageId = 1
+DELETE {{baseUrl}}/pets/{{petId}}/images/{{imageId}}
+Authorization: Bearer {{token}}
