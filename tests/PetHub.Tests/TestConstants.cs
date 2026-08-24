@@ -37,6 +37,16 @@ public static class TestConstants
         public const string Street = "Rua Teste";
         public const string StreetNumber = "123";
 
+        // Shelter identity
+        public const string ShelterName = "Patas Amigas";
+        public const string ShelterEmail = "shelter@example.com";
+        public const string ValidCnpj = "04252011000110";
+        public const string ValidFormattedCnpj = "04.252.011/0001-10";
+        public const string AnotherValidCnpj = "11222333000181";
+        public const string InvalidCnpj = "11444777000160";
+        public const string ShelterDescription =
+            "Abrigo responsável pela proteção e adoção de cães e gatos.";
+
         // Updated values for update tests
         public const string UpdatedName = "Updated Name";
         public const string UpdatedPhone = "11988776655";
@@ -249,11 +259,25 @@ public static class TestConstants
     /// </summary>
     public static class ApiPaths
     {
+        public const string Health = "/health";
+
         // Auth paths
         public const string AuthRegister = "/api/auth/register";
         public const string AuthLogin = "/api/auth/login";
         public const string AuthRefresh = "/api/auth/refresh";
         public const string AuthRevoke = "/api/auth/revoke";
+        public const string AuthVerifyEmail = "/api/auth/verify-email";
+        public const string AuthResendVerification = "/api/auth/resend-verification";
+        public const string AuthForgotPassword = "/api/auth/forgot-password";
+        public const string AuthResetPassword = "/api/auth/reset-password";
+
+        // Catalog paths
+        public const string Species = "/api/species";
+        public const string Tags = "/api/tags";
+
+        public static string SpeciesBreeds(int speciesId) => $"/api/species/{speciesId}/breeds";
+
+        public static string TagsByCategory(string category) => $"/api/tags?category={category}";
 
         // Pet paths
         public const string Pets = "/api/pets";
@@ -267,6 +291,8 @@ public static class TestConstants
 
         // User paths
         public const string UsersMe = "/api/users/me";
+
+        public static string UserById(Guid userId) => $"/api/users/{userId}";
 
         // Adoption Request paths
         public const string AdoptionRequests = "/api/adoption-requests";
@@ -288,8 +314,40 @@ public static class TestConstants
         public static string ApproveAdoptionRequest(int requestId) =>
             $"/api/adoption-requests/{requestId}/approve";
 
+        public static string CancelAdoptionRequest(int requestId) =>
+            $"/api/adoption-requests/{requestId}/cancel";
+
         public static string MarkPetAsAdopted(int petId) =>
             $"/api/adoption-requests/pet/{petId}/mark-adopted";
+
+        // Chat / conversation paths
+        public const string Conversations = "/api/conversations";
+        public const string ChatHub = "/chatHub";
+        public const string NotificationHub = "/notificationHub";
+        public const string Notifications = "/api/notifications";
+        public const string NotificationsUnreadCount = "/api/notifications/unread-count";
+        public const string NotificationsReadAll = "/api/notifications/read-all";
+
+        public static string NotificationRead(int notificationId) =>
+            $"/api/notifications/{notificationId}/read";
+
+        public static string ConversationById(int conversationId) =>
+            $"/api/conversations/{conversationId}";
+
+        public static string ConversationMessages(int conversationId) =>
+            $"/api/conversations/{conversationId}/messages";
+
+        public static string ConversationMessagesPaged(
+            int conversationId,
+            int pageSize,
+            int? beforeId = null
+        ) =>
+            beforeId.HasValue
+                ? $"/api/conversations/{conversationId}/messages?pageSize={pageSize}&beforeId={beforeId}"
+                : $"/api/conversations/{conversationId}/messages?pageSize={pageSize}";
+
+        public static string ConversationRead(int conversationId) =>
+            $"/api/conversations/{conversationId}/read";
 
         // Pet Image paths
         public static string PetImages(int petId) => $"/api/pets/{petId}/images";
@@ -388,7 +446,10 @@ public static class TestConstants
             string? city = null,
             string? neighborhood = null,
             string? street = null,
-            string? streetNumber = null
+            string? streetNumber = null,
+            API.Enums.UserType accountType = API.Enums.UserType.Person,
+            string? cnpj = null,
+            string? description = null
         ) =>
             new()
             {
@@ -402,7 +463,24 @@ public static class TestConstants
                 Neighborhood = neighborhood ?? Users.Neighborhood,
                 Street = street ?? Users.Street,
                 StreetNumber = streetNumber ?? Users.StreetNumber,
+                AccountType = accountType,
+                Cnpj = cnpj,
+                Description = description,
             };
+
+        public static API.DTOs.User.CreateUserDto CreateValidShelterDto(
+            string? name = null,
+            string? email = null,
+            string? cnpj = null,
+            string? description = null
+        ) =>
+            CreateValidUserDto(
+                name: name ?? Users.ShelterName,
+                email: email,
+                accountType: API.Enums.UserType.Shelter,
+                cnpj: cnpj ?? Users.ValidCnpj,
+                description: description ?? Users.ShelterDescription
+            );
 
         /// <summary>
         /// Creates a valid PatchUserDto with specific fields
@@ -411,7 +489,10 @@ public static class TestConstants
             string? name = null,
             string? email = null,
             string? password = null,
-            string? phoneNumber = null
+            string? phoneNumber = null,
+            API.Enums.UserType? accountType = null,
+            string? cnpj = null,
+            string? description = null
         ) =>
             new()
             {
@@ -419,6 +500,9 @@ public static class TestConstants
                 Email = email,
                 Password = password,
                 PhoneNumber = phoneNumber,
+                AccountType = accountType,
+                Cnpj = cnpj,
+                Description = description,
             };
 
         /// <summary>
@@ -426,5 +510,17 @@ public static class TestConstants
         /// </summary>
         public static API.DTOs.User.LoginDto CreateLoginDto(string email, string password) =>
             new() { Email = email, Password = password };
+    }
+
+    /// <summary>
+    /// Chat-related test data
+    /// </summary>
+    public static class Chat
+    {
+        public const string ValidMessage = "Hi, I would like to know more about this pet.";
+        public const string SecondMessage = "Does this pet get along with other dogs?";
+        public const string OwnerReply = "Yes, Rex is very friendly with other dogs.";
+        public const string AdoptionRequestMessage =
+            "I would love to adopt this pet! I have a big backyard.";
     }
 }

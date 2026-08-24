@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using PetHub.API.Enums;
+using PetHub.API.Utils;
 
 namespace PetHub.API.DTOs.User;
 
-public class PatchUserDto
+public class PatchUserDto : IValidatableObject
 {
     // All fields are Nullable (?).
     // If null, we ignore. If has value, we update.
@@ -40,4 +42,36 @@ public class PatchUserDto
 
     [StringLength(10)]
     public string? StreetNumber { get; set; }
+
+    public UserType? AccountType { get; set; }
+
+    [StringLength(18)]
+    public string? Cnpj { get; set; }
+
+    [StringLength(2000)]
+    public string? Description { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!string.IsNullOrWhiteSpace(Cnpj) && !CnpjHelper.IsValid(Cnpj))
+        {
+            yield return new ValidationResult("A valid CNPJ is required.", [nameof(Cnpj)]);
+        }
+
+        if (AccountType == UserType.Person && !string.IsNullOrWhiteSpace(Cnpj))
+        {
+            yield return new ValidationResult(
+                "CNPJ is only allowed for shelter accounts.",
+                [nameof(Cnpj)]
+            );
+        }
+
+        if (AccountType == UserType.Shelter && Cnpj != null && !CnpjHelper.IsValid(Cnpj))
+        {
+            yield return new ValidationResult(
+                "A valid CNPJ is required for shelter accounts.",
+                [nameof(Cnpj)]
+            );
+        }
+    }
 }

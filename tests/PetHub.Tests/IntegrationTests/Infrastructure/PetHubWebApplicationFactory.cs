@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using PetHub.API.Data;
 using PetHub.API.Services;
+using PetHub.Tests.IntegrationTests.Helpers;
 
 namespace PetHub.Tests.IntegrationTests.Infrastructure;
 
@@ -14,6 +15,8 @@ public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _databaseName;
 
     public Mock<ICloudinaryService>? MockCloudinaryService { get; set; }
+
+    public CapturingEmailSender EmailSender { get; } = new();
 
     public PetHubWebApplicationFactory()
     {
@@ -73,6 +76,16 @@ public class PetHubWebApplicationFactory : WebApplicationFactory<Program>
 
                 services.AddSingleton(MockCloudinaryService.Object);
             }
+
+            var emailDescriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(IEmailSender)
+            );
+            if (emailDescriptor != null)
+            {
+                services.Remove(emailDescriptor);
+            }
+
+            services.AddSingleton<IEmailSender>(EmailSender);
         });
 
         builder.UseEnvironment("Testing");

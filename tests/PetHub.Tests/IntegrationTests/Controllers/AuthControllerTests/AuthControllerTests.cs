@@ -32,6 +32,57 @@ public class AuthControllerTests : IClassFixture<PetHubWebApplicationFactory>
         apiResponse.Data.User.Should().NotBeNull();
         apiResponse.Data.User.Email.Should().Be(registerDto.Email);
         apiResponse.Data.User.Name.Should().Be(registerDto.Name);
+        apiResponse.Data.User.EmailVerified.Should().BeFalse();
+        apiResponse.Data.User.AccountType.Should().Be(PetHub.API.Enums.UserType.Person);
+        apiResponse.Data.User.Cnpj.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Register_AsShelter_WithValidCnpj_ReturnsShelterProfile()
+    {
+        var registerDto = TestConstants.DtoBuilders.CreateValidShelterDto();
+
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.ApiPaths.AuthRegister,
+            registerDto
+        );
+
+        var apiResponse = await response.ShouldBeOk().WithContent<ApiResponse<LoginResponseDto>>();
+        apiResponse.Data!.User.AccountType.Should().Be(PetHub.API.Enums.UserType.Shelter);
+        apiResponse.Data.User.Cnpj.Should().Be(TestConstants.Users.ValidCnpj);
+        apiResponse.Data.User.Description.Should().Be(TestConstants.Users.ShelterDescription);
+        apiResponse.Data.User.Name.Should().Be(TestConstants.Users.ShelterName);
+    }
+
+    [Fact]
+    public async Task Register_AsShelter_WithoutCnpj_ReturnsBadRequest()
+    {
+        var registerDto = TestConstants.DtoBuilders.CreateValidUserDto(
+            accountType: PetHub.API.Enums.UserType.Shelter
+        );
+
+        var response = await _client.PostAsJsonAsync(
+            TestConstants.ApiPaths.AuthRegister,
+            registerDto
+        );
+
+        await response.ShouldBeBadRequest().WithErrorMessage("CNPJ");
+    }
+
+    [Fact]
+    public async Task Register_AsShelter_WithDuplicateCnpj_ReturnsBadRequest()
+    {
+        var first = TestConstants.DtoBuilders.CreateValidShelterDto(
+            cnpj: TestConstants.Users.AnotherValidCnpj
+        );
+        await _client.PostAsJsonAsync(TestConstants.ApiPaths.AuthRegister, first);
+
+        var second = TestConstants.DtoBuilders.CreateValidShelterDto(
+            cnpj: TestConstants.Users.AnotherValidCnpj
+        );
+        var response = await _client.PostAsJsonAsync(TestConstants.ApiPaths.AuthRegister, second);
+
+        await response.ShouldBeBadRequest().WithErrorMessage("CNPJ already registered");
     }
 
     [Fact]

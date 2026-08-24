@@ -9,6 +9,7 @@ public class AdoptionService(
     AppDbContext context,
     IAdoptionRequestRepository adoptionRequestRepository,
     IPetRepository petRepository,
+    INotificationService notificationService,
     ILogger<AdoptionService> logger
 ) : IAdoptionService
 {
@@ -41,6 +42,9 @@ public class AdoptionService(
         if (request == null || request.Pet == null || request.Pet.UserId != ownerId)
             return null;
 
+        List<AdoptionRequest> otherRequests = [];
+        AdoptionRequest? approved;
+
         // Start transaction for atomic operations
         using var transaction = await context.Database.BeginTransactionAsync();
 
@@ -54,8 +58,10 @@ public class AdoptionService(
             request.Pet.IsAdopted = true;
 
             // Reject all other pending requests for this pet
-            var otherRequests = await context
-                .AdoptionRequests.Where(ar =>
+            otherRequests = await context
+                .AdoptionRequests.Include(ar => ar.Pet)
+                .Include(ar => ar.Adopter)
+                .Where(ar =>
                     ar.PetId == request.PetId
                     && ar.Id != requestId
                     && ar.Status == AdoptionStatus.Pending
@@ -71,8 +77,7 @@ public class AdoptionService(
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            // Reload with full relationships
-            return await adoptionRequestRepository.GetByIdAsync(requestId);
+            approved = await adoptionRequestRepository.GetByIdAsync(requestId);
         }
         catch (Exception ex)
         {
@@ -85,6 +90,61 @@ public class AdoptionService(
             await transaction.RollbackAsync();
             throw;
         }
+
+        if (approved != null)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestApproved,
+                approved.AdopterId,
+                approved
+            );
+        }
+
+        foreach (var other in otherRequests)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestRejected,
+                other.AdopterId,
+                other
+            );
+        }
+
+        return approved;
+    }
+
+    public async Task<AdoptionRequest?> CancelAdoptionRequestAsync(int requestId, Guid adopterId)
+    {
+        var request = await context
+            .AdoptionRequests.Include(ar => ar.Pet)
+            .Include(ar => ar.Adopter)
+            .FirstOrDefaultAsync(ar => ar.Id == requestId);
+
+        if (request == null)
+            return null;
+
+        if (request.AdopterId != adopterId)
+            throw new UnauthorizedAccessException(
+                "You don't have permission to cancel this adoption request."
+            );
+
+        if (request.Status != AdoptionStatus.Pending)
+            throw new ArgumentException("Only pending adoption requests can be cancelled.");
+
+        request.Status = AdoptionStatus.Cancelled;
+        request.UpdatedAt = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+
+        var cancelled = await adoptionRequestRepository.GetByIdAsync(requestId);
+        if (cancelled?.Pet != null)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestCancelled,
+                cancelled.Pet.UserId,
+                cancelled
+            );
+        }
+
+        return cancelled;
     }
 
     public async Task<bool> MarkPetAsAdoptedAsync(int petId, Guid ownerId)
@@ -93,6 +153,8 @@ public class AdoptionService(
 
         if (pet == null)
             return false;
+
+        List<AdoptionRequest> pendingRequests = [];
 
         // Start transaction for atomic operations
         using var transaction = await context.Database.BeginTransactionAsync();
@@ -103,10 +165,10 @@ public class AdoptionService(
             pet.IsAdopted = true;
 
             // Reject all pending adoption requests
-            var pendingRequests = await context
-                .AdoptionRequests.Where(ar =>
-                    ar.PetId == petId && ar.Status == AdoptionStatus.Pending
-                )
+            pendingRequests = await context
+                .AdoptionRequests.Include(ar => ar.Pet)
+                .Include(ar => ar.Adopter)
+                .Where(ar => ar.PetId == petId && ar.Status == AdoptionStatus.Pending)
                 .ToListAsync();
 
             foreach (var request in pendingRequests)
@@ -117,8 +179,6 @@ public class AdoptionService(
 
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
-
-            return true;
         }
         catch (Exception ex)
         {
@@ -131,6 +191,17 @@ public class AdoptionService(
             await transaction.RollbackAsync();
             throw;
         }
+
+        foreach (var request in pendingRequests)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestRejected,
+                request.AdopterId,
+                request
+            );
+        }
+
+        return true;
     }
 
     public async Task<(bool exists, bool hasPermission)> ValidateAdoptionRequestOwnershipAsync(

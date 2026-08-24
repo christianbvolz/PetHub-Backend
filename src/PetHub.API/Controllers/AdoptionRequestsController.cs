@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetHub.API.Common;
 using PetHub.API.DTOs.AdoptionRequest;
+using PetHub.API.Enums;
 using PetHub.API.Mappings;
 using PetHub.API.Services;
 
@@ -13,7 +14,9 @@ namespace PetHub.API.Controllers;
 public class AdoptionRequestsController(
     IAdoptionRequestRepository adoptionRequestRepository,
     IPetRepository petRepository,
-    IAdoptionService adoptionService
+    IAdoptionService adoptionService,
+    IChatService chatService,
+    INotificationService notificationService
 ) : ApiControllerBase
 {
     /// <summary>
@@ -55,6 +58,17 @@ public class AdoptionRequestsController(
         }
 
         var adoptionRequest = await adoptionRequestRepository.CreateAsync(dto, userId);
+
+        await chatService.GetOrCreateForAdoptionRequestAsync(adoptionRequest.Id, userId);
+
+        if (adoptionRequest.Pet != null)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestCreated,
+                adoptionRequest.Pet.UserId,
+                adoptionRequest
+            );
+        }
 
         return CreatedAtAction(
             nameof(GetAdoptionRequest),
@@ -177,6 +191,23 @@ public class AdoptionRequestsController(
             return NotFound("Adoption request not found or you don't have permission to update it");
         }
 
+        if (updatedRequest.Status == AdoptionStatus.Rejected)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestRejected,
+                updatedRequest.AdopterId,
+                updatedRequest
+            );
+        }
+        else if (updatedRequest.Status == AdoptionStatus.Approved)
+        {
+            await notificationService.NotifyAdoptionEventAsync(
+                NotificationType.AdoptionRequestApproved,
+                updatedRequest.AdopterId,
+                updatedRequest
+            );
+        }
+
         return Success(updatedRequest.ToDto(), "Adoption request status updated successfully");
     }
 
@@ -255,6 +286,45 @@ public class AdoptionRequestsController(
             approvedRequest.ToDto(),
             "Adoption request approved successfully. Pet marked as adopted."
         );
+    }
+
+    /// <summary>
+    /// Cancels a pending adoption request. Only the adopter who created it can cancel.
+    /// </summary>
+    /// <param name="id">Adoption request ID</param>
+    /// <returns>Cancelled adoption request data</returns>
+    /// <response code="200">Request cancelled successfully</response>
+    /// <response code="400">Request is not pending</response>
+    /// <response code="401">User not authenticated or invalid token</response>
+    /// <response code="403">User is not the adopter who created this request</response>
+    /// <response code="404">Adoption request not found</response>
+    [HttpPost("{id}/cancel")]
+    public async Task<ActionResult> CancelAdoptionRequest(int id)
+    {
+        var userIdResult = GetUserIdOrUnauthorized();
+        if (userIdResult.Result is UnauthorizedObjectResult unauthorized)
+            return unauthorized;
+
+        var userId = userIdResult.Value;
+
+        try
+        {
+            var cancelledRequest = await adoptionService.CancelAdoptionRequestAsync(id, userId);
+            if (cancelledRequest == null)
+            {
+                return NotFound("Adoption request not found.");
+            }
+
+            return Success(cancelledRequest.ToDto(), "Adoption request cancelled successfully.");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return ForbiddenResponse(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return Error(ex.Message);
+        }
     }
 
     /// <summary>

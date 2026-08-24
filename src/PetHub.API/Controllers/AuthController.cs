@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PetHub.API.Common;
+using PetHub.API.Configuration;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.User;
 using PetHub.API.Mappings;
@@ -9,17 +11,19 @@ namespace PetHub.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitingSettings.AuthPolicy)]
 public class AuthController(
     IUserRepository userRepository,
     IJwtService jwtService,
     IRefreshTokenService refreshTokenService,
+    IAuthLifecycleService authLifecycleService,
     Utils.ICookieOptionsProvider cookieOptionsProvider
 ) : ApiControllerBase
 {
     /// <summary>
     /// Registers a new user in the system
     /// </summary>
-    /// <param name="dto">New user data including name, email, password, phone and address</param>
+    /// <param name="dto">New user data including name, email, password, phone, address and optional shelter identity (account type, CNPJ, description)</param>
     /// <returns>JWT token and created user data</returns>
     /// <response code="200">User registered successfully</response>
     /// <response code="400">Invalid data (email already registered or validation failed)</response>
@@ -31,6 +35,7 @@ public class AuthController(
         try
         {
             var user = await userRepository.CreateAsync(dto);
+            await authLifecycleService.SendVerificationEmailAsync(user);
             var token = jwtService.GenerateToken(user.Id, user.Email);
 
             var refresh = await refreshTokenService.CreateAsync(user.Id);
@@ -182,5 +187,77 @@ public class AuthController(
         Response.Cookies.Delete("refreshToken", deleteOptions);
 
         return Success("Token revoked successfully.");
+    }
+
+    /// <summary>
+    /// Confirms a user's email address using the token sent after registration.
+    /// </summary>
+    /// <param name="dto">The verification token from the email.</param>
+    /// <response code="200">Email verified successfully.</response>
+    /// <response code="400">Invalid or expired token.</response>
+    [HttpPost("verify-email")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<string>>> VerifyEmail(VerifyEmailDto dto)
+    {
+        try
+        {
+            await authLifecycleService.VerifyEmailAsync(dto.Token);
+            return Success(AuthLifecycleService.EmailVerifiedMessage);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Error(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Sends a new email verification link. Always returns 200 to avoid leaking whether the email exists.
+    /// </summary>
+    /// <param name="dto">The email address to resend verification to.</param>
+    /// <response code="200">If the account exists and is unverified, a new link is sent.</response>
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<string>>> ResendVerification(
+        ResendVerificationDto dto
+    )
+    {
+        await authLifecycleService.RequestVerificationEmailAsync(dto.Email);
+        return Success(AuthLifecycleService.GenericVerificationMessage);
+    }
+
+    /// <summary>
+    /// Starts a password reset. Always returns 200 to avoid leaking whether the email exists.
+    /// </summary>
+    /// <param name="dto">The account email address.</param>
+    /// <response code="200">If the account exists, a reset link is sent.</response>
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<string>>> ForgotPassword(ForgotPasswordDto dto)
+    {
+        await authLifecycleService.RequestPasswordResetAsync(dto.Email);
+        return Success(AuthLifecycleService.GenericPasswordResetMessage);
+    }
+
+    /// <summary>
+    /// Sets a new password using a reset token from email. All active sessions are revoked.
+    /// </summary>
+    /// <param name="dto">The reset token and the new password.</param>
+    /// <response code="200">Password reset successfully.</response>
+    /// <response code="400">Invalid or expired token, or invalid password.</response>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<string>>> ResetPassword(ResetPasswordDto dto)
+    {
+        try
+        {
+            await authLifecycleService.ResetPasswordAsync(dto.Token, dto.NewPassword);
+            return Success(AuthLifecycleService.PasswordResetSuccessMessage);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Error(ex.Message);
+        }
     }
 }

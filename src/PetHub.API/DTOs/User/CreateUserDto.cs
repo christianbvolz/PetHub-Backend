@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using PetHub.API.Enums;
+using PetHub.API.Utils;
 
 namespace PetHub.API.DTOs.User;
 
-public class CreateUserDto
+public class CreateUserDto : IValidatableObject
 {
     [Required]
     [StringLength(30, ErrorMessage = "Name cannot exceed 30 characters.")]
@@ -47,4 +49,33 @@ public class CreateUserDto
     [Required]
     [StringLength(10)]
     public string StreetNumber { get; set; } = string.Empty;
+
+    public UserType AccountType { get; set; } = UserType.Person;
+
+    [StringLength(18)]
+    public string? Cnpj { get; set; }
+
+    [StringLength(2000)]
+    public string? Description { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (AccountType == UserType.Shelter)
+        {
+            if (!CnpjHelper.IsValid(Cnpj))
+            {
+                yield return new ValidationResult(
+                    "A valid CNPJ is required for shelter accounts.",
+                    [nameof(Cnpj)]
+                );
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(Cnpj))
+        {
+            yield return new ValidationResult(
+                "CNPJ is only allowed for shelter accounts.",
+                [nameof(Cnpj)]
+            );
+        }
+    }
 }

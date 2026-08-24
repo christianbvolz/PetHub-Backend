@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using PetHub.API.Data;
@@ -190,6 +191,20 @@ public class GetPetIntegrationTests : IntegrationTestBase
         // ImageUrls and Tags (can be empty but should be initialized)
         pet.ImageUrls.Should().NotBeNull();
         pet.Tags.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetPet_DoesNotExposeOwnerPrivateData()
+    {
+        var requestUri = TestConstants.ApiPaths.PetById(_existingPetId);
+
+        var response = await Factory.CreateClient().GetAsync(requestUri);
+
+        response.ShouldBeOk();
+
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var owner = json.GetProperty("data").GetProperty("owner");
+        OwnerPrivacyAssertions.ShouldExposeOnlyPublicOwnerFields(owner);
     }
 
     [Fact]

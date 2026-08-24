@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PetHub.API.Enums;
 using PetHub.API.Models;
 using PetHub.API.Utils;
@@ -6,12 +7,11 @@ namespace PetHub.API.Data;
 
 public static class DbSeeder
 {
-    public static async Task SeedAsync(AppDbContext context)
+    public static async Task SeedCatalogAsync(AppDbContext context)
     {
-        // Check if database is already seeded
-        if (context.Users.Any() || context.Pets.Any())
+        if (await context.Species.AnyAsync())
         {
-            return; // Database already has data
+            return;
         }
 
         // --- SEED SPECIES ---
@@ -255,12 +255,21 @@ public static class DbSeeder
         };
         context.Tags.AddRange(tags);
         await context.SaveChangesAsync();
+    }
+
+    public static async Task SeedDemoDataAsync(AppDbContext context)
+    {
+        if (await context.Users.AnyAsync() || await context.Pets.AnyAsync())
+        {
+            return;
+        }
 
         // --- SEED USERS ---
         // Using UUID v7 for user IDs (ordered by creation time, secure against enumeration)
         var user1Id = UuidHelper.NewId();
         var user2Id = UuidHelper.NewId();
         var user3Id = UuidHelper.NewId();
+        var shelterId = UuidHelper.NewId();
 
         var users = new List<User>
         {
@@ -270,6 +279,8 @@ public static class DbSeeder
                 Name = "christian volz",
                 Email = "christianbvolz@gmail.com",
                 PasswordHash = PasswordHelper.HashPassword("qwerty"),
+                EmailVerified = true,
+                EmailVerifiedAt = DateTime.UtcNow,
                 PhoneNumber = "11987654321",
                 ZipCode = "01310100",
                 State = "SP",
@@ -284,6 +295,8 @@ public static class DbSeeder
                 Name = "João Santos",
                 Email = "joao.santos@email.com",
                 PasswordHash = PasswordHelper.HashPassword("senha123"),
+                EmailVerified = true,
+                EmailVerifiedAt = DateTime.UtcNow,
                 PhoneNumber = "21987654321",
                 ZipCode = "20040020",
                 State = "RJ",
@@ -298,6 +311,8 @@ public static class DbSeeder
                 Name = "Ana Costa",
                 Email = "ana.costa@email.com",
                 PasswordHash = PasswordHelper.HashPassword("senha123"),
+                EmailVerified = true,
+                EmailVerifiedAt = DateTime.UtcNow,
                 PhoneNumber = "31987654321",
                 ZipCode = "30130100",
                 State = "MG",
@@ -305,6 +320,26 @@ public static class DbSeeder
                 Neighborhood = "Centro",
                 Street = "Av. Afonso Pena",
                 StreetNumber = "1500",
+            },
+            new()
+            {
+                Id = shelterId,
+                Name = "Patas Amigas",
+                Email = "contato@patasamigas.org",
+                PasswordHash = PasswordHelper.HashPassword("senha123"),
+                EmailVerified = true,
+                EmailVerifiedAt = DateTime.UtcNow,
+                PhoneNumber = "1133334444",
+                ZipCode = "04038001",
+                State = "SP",
+                City = "São Paulo",
+                Neighborhood = "Vila Mariana",
+                Street = "Rua Domingos de Morais",
+                StreetNumber = "200",
+                AccountType = UserType.Shelter,
+                Cnpj = "11444777000161",
+                Description =
+                    "Abrigo responsável pela proteção e adoção responsável de cães e gatos.",
             },
         };
         context.Users.AddRange(users);
@@ -342,11 +377,11 @@ public static class DbSeeder
             "Oliver",
         };
 
-        var userIds = new[] { user1Id, user2Id, user3Id };
+        var userIds = new[] { user1Id, user2Id, user3Id, shelterId };
 
         for (var i = 1; i <= 50; i++)
         {
-            var userId = userIds[(i - 1) % 3]; // Distribute pets among 3 users
+            var userId = userIds[(i - 1) % 4]; // Distribute pets among people and the shelter
             var speciesId = random.Next(1, 3); // Only Dogs and Cats for simplicity
             var breedId =
                 speciesId == 1

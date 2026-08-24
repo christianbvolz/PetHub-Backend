@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using PetHub.API.DTOs.Common;
 using PetHub.API.DTOs.Pet;
@@ -303,6 +304,20 @@ public class SearchPetsIntegrationTests : IntegrationTestBase
         pet.Owner.Should().NotBeNull();
         pet.Owner.Name.Should().NotBeNullOrEmpty();
         pet.Tags.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task SearchPets_DoesNotExposeOwnerPrivateData()
+    {
+        var requestUri = $"{TestConstants.ApiPaths.PetsSearch}?page=1&pageSize=1";
+
+        var response = await Factory.CreateClient().GetAsync(requestUri);
+
+        response.ShouldBeOk();
+
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var owner = json.GetProperty("data").GetProperty("items")[0].GetProperty("owner");
+        OwnerPrivacyAssertions.ShouldExposeOnlyPublicOwnerFields(owner);
     }
 
     [Fact]

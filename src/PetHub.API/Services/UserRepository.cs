@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PetHub.API.Data;
 using PetHub.API.DTOs.User;
+using PetHub.API.Enums;
 using PetHub.API.Models;
 using PetHub.API.Utils;
 
@@ -31,6 +32,12 @@ public class UserRepository(AppDbContext context) : IUserRepository
             throw new InvalidOperationException("Email already registered.");
         }
 
+        var cnpj = ResolveCnpj(dto.AccountType, dto.Cnpj);
+        if (dto.AccountType == UserType.Shelter && await CnpjExistsAsync(cnpj))
+        {
+            throw new InvalidOperationException("CNPJ already registered.");
+        }
+
         var user = new User
         {
             Id = UuidHelper.NewId(),
@@ -45,6 +52,9 @@ public class UserRepository(AppDbContext context) : IUserRepository
             Street = dto.Street,
             StreetNumber = dto.StreetNumber,
             ProfilePictureUrl = "",
+            AccountType = dto.AccountType,
+            Cnpj = cnpj,
+            Description = dto.Description?.Trim() ?? string.Empty,
         };
 
         context.Users.Add(user);
@@ -94,12 +104,47 @@ public class UserRepository(AppDbContext context) : IUserRepository
                 throw new InvalidOperationException("Email already in use by another account.");
             }
             user.Email = dto.Email;
+            user.EmailVerified = false;
+            user.EmailVerifiedAt = null;
         }
 
         // Business logic: hash password when changing
         if (!string.IsNullOrEmpty(dto.Password))
         {
             user.PasswordHash = PasswordHelper.HashPassword(dto.Password);
+        }
+
+        if (dto.AccountType.HasValue)
+            user.AccountType = dto.AccountType.Value;
+
+        if (dto.Description != null)
+            user.Description = dto.Description.Trim();
+
+        if (dto.Cnpj != null)
+            user.Cnpj = CnpjHelper.Normalize(dto.Cnpj);
+
+        if (user.AccountType == UserType.Person)
+        {
+            if (dto.Cnpj != null && !string.IsNullOrWhiteSpace(dto.Cnpj))
+            {
+                throw new InvalidOperationException("CNPJ is only allowed for shelter accounts.");
+            }
+
+            user.Cnpj = string.Empty;
+        }
+        else
+        {
+            if (!CnpjHelper.IsValid(user.Cnpj))
+            {
+                throw new InvalidOperationException(
+                    "A valid CNPJ is required for shelter accounts."
+                );
+            }
+
+            if (await CnpjExistsAsync(user.Cnpj, id))
+            {
+                throw new InvalidOperationException("CNPJ already registered.");
+            }
         }
 
         await context.SaveChangesAsync();
@@ -116,6 +161,35 @@ public class UserRepository(AppDbContext context) : IUserRepository
         }
 
         return await context.Users.AnyAsync(u => u.Email == email);
+    }
+
+    private async Task<bool> CnpjExistsAsync(string cnpj, Guid? excludeUserId = null)
+    {
+        if (string.IsNullOrEmpty(cnpj))
+            return false;
+
+        if (excludeUserId.HasValue)
+        {
+            return await context.Users.AnyAsync(u =>
+                u.Cnpj == cnpj && u.Id != excludeUserId.Value
+            );
+        }
+
+        return await context.Users.AnyAsync(u => u.Cnpj == cnpj);
+    }
+
+    private static string ResolveCnpj(UserType accountType, string? cnpj)
+    {
+        if (accountType != UserType.Shelter)
+            return string.Empty;
+
+        var normalized = CnpjHelper.Normalize(cnpj);
+        if (!CnpjHelper.IsValid(normalized))
+        {
+            throw new InvalidOperationException("A valid CNPJ is required for shelter accounts.");
+        }
+
+        return normalized;
     }
 
     public async Task<User?> AuthenticateAsync(string email, string password)

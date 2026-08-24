@@ -75,5 +75,20 @@ public class RefreshTokenCleanupService : BackgroundService
         {
             _logger.LogDebug("No expired refresh tokens found during cleanup.");
         }
+
+        var expiredAuthTokens = await dbContext
+            .AuthTokens.Where(t => t.ExpiresAt <= now)
+            .ToListAsync(cancellationToken);
+
+        if (expiredAuthTokens.Count > 0)
+        {
+            dbContext.AuthTokens.RemoveRange(expiredAuthTokens);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Cleaned up {Count} expired auth tokens.",
+                expiredAuthTokens.Count
+            );
+        }
     }
 }

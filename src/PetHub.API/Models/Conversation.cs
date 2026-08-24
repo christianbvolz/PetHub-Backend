@@ -24,6 +24,12 @@ public class Conversation
     [JsonIgnore]
     public Pet? Pet { get; set; }
 
+    // Linked adoption request, when the chat started from (or was later tied to) a request
+    public int? AdoptionRequestId { get; set; }
+
+    [JsonIgnore]
+    public AdoptionRequest? AdoptionRequest { get; set; }
+
     // Helper for sorting inbox (shows the newest chats on top)
     public DateTime LastMessageAt { get; set; } = DateTime.UtcNow;
 

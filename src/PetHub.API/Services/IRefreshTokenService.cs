@@ -38,4 +38,13 @@ public interface IRefreshTokenService
     /// <param name="tokenPlain">The plain text token.</param>
     /// <returns>The RefreshToken entity or null if not found.</returns>
     Task<RefreshToken?> GetByTokenAsync(string tokenPlain);
+
+    /// <summary>
+    /// Revokes every active refresh token for a user (for example after a password reset).
+    /// </summary>
+    Task RevokeAllForUserAsync(
+        Guid userId,
+        string reason,
+        CancellationToken cancellationToken = default
+    );
 }

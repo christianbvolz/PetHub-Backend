@@ -1,6 +1,7 @@
 using FluentAssertions;
 using PetHub.API.Data;
 using PetHub.API.DTOs.Pet;
+using PetHub.API.DTOs.User;
 using PetHub.Tests.Extensions;
 using PetHub.Tests.IntegrationTests.Helpers;
 using PetHub.Tests.IntegrationTests.Infrastructure;
@@ -290,8 +291,11 @@ public class CreatePetIntegrationTests : IntegrationTestBase
         createdPet.Should().NotBeNull();
         createdPet!.Owner.Should().NotBeNull();
         createdPet.Owner.Id.Should().NotBe(Guid.Empty);
-        createdPet.Owner.Email.Should().NotBeNullOrWhiteSpace(); // The authenticated user
-        createdPet.Owner.Email.Should().Contain("@example.com");
+        createdPet.Owner.Name.Should().NotBeNullOrEmpty();
+
+        var meResponse = await Client.GetAsync(TestConstants.ApiPaths.UsersMe);
+        var me = await meResponse.ReadApiResponseDataAsync<UserResponseDto>();
+        createdPet.Owner.Id.Should().Be(me!.Id);
     }
 
     [Fact]

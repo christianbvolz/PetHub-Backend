@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // Authentication
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<AuthToken> AuthTokens { get; set; }
 
     // Adoption Tables
     public DbSet<AdoptionRequest> AdoptionRequests { get; set; }
@@ -24,6 +25,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // Chat Tables
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
+
+    // Notifications
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +40,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnType("char(36)")
             .HasCharSet("utf8mb4")
             .UseCollation("utf8mb4_bin");
+
+        modelBuilder.Entity<User>().Property(u => u.Cnpj).HasMaxLength(14);
+        modelBuilder.Entity<User>().Property(u => u.Description).HasMaxLength(2000);
 
         modelBuilder
             .Entity<Pet>()
@@ -124,6 +131,65 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(c => c.UserBId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder
+            .Entity<Conversation>()
+            .HasOne(c => c.Pet)
+            .WithMany()
+            .HasForeignKey(c => c.PetId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<Conversation>()
+            .HasOne(c => c.AdoptionRequest)
+            .WithMany()
+            .HasForeignKey(c => c.AdoptionRequestId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // One inbox thread per pet between the same two users (UserAId < UserBId)
+        modelBuilder
+            .Entity<Conversation>()
+            .HasIndex(c => new
+            {
+                c.PetId,
+                c.UserAId,
+                c.UserBId,
+            })
+            .IsUnique();
+
+        modelBuilder
+            .Entity<ChatMessage>()
+            .HasOne(m => m.Conversation)
+            .WithMany(c => c.Messages)
+            .HasForeignKey(m => m.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ChatMessage>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ChatMessage>().HasIndex(m => new { m.ConversationId, m.SentAt });
+
+        // --- Notification Relationships ---
+        modelBuilder
+            .Entity<Notification>()
+            .Property(n => n.UserId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<Notification>()
+            .HasOne(n => n.User)
+            .WithMany()
+            .HasForeignKey(n => n.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Notification>().HasIndex(n => new { n.UserId, n.CreatedAt });
+        modelBuilder.Entity<Notification>().HasIndex(n => new { n.UserId, n.IsRead });
+
         // --- PetTag Many-to-Many Relationship ---
         modelBuilder.Entity<PetTag>().HasKey(pt => new { pt.PetId, pt.TagId });
 
@@ -172,5 +238,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnType("char(36)")
             .HasCharSet("utf8mb4")
             .UseCollation("utf8mb4_bin");
+
+        modelBuilder
+            .Entity<AuthToken>()
+            .HasOne(t => t.User)
+            .WithMany(u => u.AuthTokens)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<AuthToken>()
+            .Property(t => t.UserId)
+            .HasColumnType("char(36)")
+            .HasCharSet("utf8mb4")
+            .UseCollation("utf8mb4_bin");
+
+        modelBuilder.Entity<AuthToken>().HasIndex(t => t.TokenHash).IsUnique();
+        modelBuilder.Entity<AuthToken>().HasIndex(t => new { t.UserId, t.Purpose });
     }
 }

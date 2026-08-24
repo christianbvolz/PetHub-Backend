@@ -91,6 +91,15 @@ public static class HttpResponseMessageExtensions
     }
 
     /// <summary>
+    /// Asserts that the response has a 429 Too Many Requests status code
+    /// </summary>
+    public static HttpResponseMessage ShouldBeTooManyRequests(this HttpResponseMessage response)
+    {
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        return response;
+    }
+
+    /// <summary>
     /// Asserts that the response body contains a validation error with the specified message
     /// </summary>
     public static async Task<HttpResponseMessage> WithValidationError(

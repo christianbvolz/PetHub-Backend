@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using PetHub.API.Enums;
 
 namespace PetHub.API.Models;
 
@@ -15,12 +16,24 @@ public class User
     [MaxLength(100)]
     public string Email { get; set; } = string.Empty;
 
+    public bool EmailVerified { get; set; }
+
+    public DateTime? EmailVerifiedAt { get; set; }
+
     [Required]
     [MaxLength(255)]
     public string PasswordHash { get; set; } = string.Empty;
 
     [MaxLength(200)]
     public string ProfilePictureUrl { get; set; } = string.Empty;
+
+    public UserType AccountType { get; set; } = UserType.Person;
+
+    [MaxLength(14)]
+    public string Cnpj { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string Description { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(20)]
@@ -55,4 +68,7 @@ public class User
 
     [JsonIgnore]
     public List<RefreshToken> RefreshTokens { get; set; } = new();
+
+    [JsonIgnore]
+    public List<AuthToken> AuthTokens { get; set; } = [];
 }

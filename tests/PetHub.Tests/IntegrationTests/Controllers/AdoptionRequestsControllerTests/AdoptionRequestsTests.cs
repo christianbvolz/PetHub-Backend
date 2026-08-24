@@ -443,4 +443,94 @@ public class AdoptionRequestsTests : IClassFixture<PetHubWebApplicationFactory>,
         var result = await response.ReadApiResponseAsync<AdoptionRequestResponseDto>();
         result!.Data!.Status.Should().Be(AdoptionStatus.Rejected);
     }
+
+    [Fact]
+    public async Task CancelAdoptionRequest_AsAdopter_CancelsPendingRequest()
+    {
+        var dto = new CreateAdoptionRequestDto
+        {
+            PetId = _petId,
+            Message = "I would love to adopt!",
+        };
+
+        var createResponse = await _adopterClient.PostAsJsonAsync(
+            TestConstants.ApiPaths.AdoptionRequests,
+            dto
+        );
+        var created = await createResponse.ReadApiResponseAsync<AdoptionRequestResponseDto>();
+        var requestId = created!.Data!.Id;
+
+        var response = await _adopterClient.PostAsync(
+            TestConstants.ApiPaths.CancelAdoptionRequest(requestId),
+            null
+        );
+
+        response.ShouldBeOk();
+        var result = await response.ReadApiResponseAsync<AdoptionRequestResponseDto>();
+        result!.Data!.Status.Should().Be(AdoptionStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task CancelAdoptionRequest_AsOwner_ReturnsForbidden()
+    {
+        var dto = new CreateAdoptionRequestDto
+        {
+            PetId = _petId,
+            Message = "I would love to adopt!",
+        };
+
+        var createResponse = await _adopterClient.PostAsJsonAsync(
+            TestConstants.ApiPaths.AdoptionRequests,
+            dto
+        );
+        var created = await createResponse.ReadApiResponseAsync<AdoptionRequestResponseDto>();
+        var requestId = created!.Data!.Id;
+
+        var response = await _ownerClient.PostAsync(
+            TestConstants.ApiPaths.CancelAdoptionRequest(requestId),
+            null
+        );
+
+        response.ShouldBeForbidden();
+    }
+
+    [Fact]
+    public async Task CancelAdoptionRequest_WhenAlreadyRejected_ReturnsBadRequest()
+    {
+        var dto = new CreateAdoptionRequestDto
+        {
+            PetId = _petId,
+            Message = "I would love to adopt!",
+        };
+
+        var createResponse = await _adopterClient.PostAsJsonAsync(
+            TestConstants.ApiPaths.AdoptionRequests,
+            dto
+        );
+        var created = await createResponse.ReadApiResponseAsync<AdoptionRequestResponseDto>();
+        var requestId = created!.Data!.Id;
+
+        await _ownerClient.PatchAsJsonAsync(
+            TestConstants.ApiPaths.AdoptionRequestStatus(requestId),
+            new UpdateAdoptionRequestStatusDto { Status = AdoptionStatus.Rejected }
+        );
+
+        var response = await _adopterClient.PostAsync(
+            TestConstants.ApiPaths.CancelAdoptionRequest(requestId),
+            null
+        );
+
+        response.ShouldBeBadRequest();
+    }
+
+    [Fact]
+    public async Task CancelAdoptionRequest_WhenNotFound_ReturnsNotFound()
+    {
+        var response = await _adopterClient.PostAsync(
+            TestConstants.ApiPaths.CancelAdoptionRequest(99999),
+            null
+        );
+
+        response.ShouldBeNotFound();
+    }
 }

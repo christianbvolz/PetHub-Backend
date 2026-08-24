@@ -27,6 +27,8 @@ public static class TestDataSeeder
             Name = TestConstants.Users.Username,
             Email = TestConstants.Users.Email,
             PasswordHash = PasswordHelper.HashPassword(TestConstants.Passwords.ValidPassword),
+            EmailVerified = true,
+            EmailVerifiedAt = DateTime.UtcNow,
             PhoneNumber = TestConstants.Users.PhoneNumber,
             ZipCode = TestConstants.Users.ZipCode,
             State = TestConstants.Users.State,

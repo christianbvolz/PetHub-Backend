@@ -17,7 +17,7 @@ public class PetResponseDto
     public required bool IsVaccinated { get; set; }
     public required bool IsAdopted { get; set; }
     public required DateTime CreatedAt { get; set; }
-    public required UserResponseDto Owner { get; set; }
+    public required PublicUserResponseDto Owner { get; set; }
     public required List<TagDto> Tags { get; set; }
     public required List<string> ImageUrls { get; set; }
 }

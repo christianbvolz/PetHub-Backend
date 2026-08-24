@@ -39,7 +39,7 @@ public static class PetMappingExtensions
             IsVaccinated = pet.IsVaccinated,
             IsAdopted = pet.IsAdopted,
             CreatedAt = pet.CreatedAt,
-            Owner = pet.User.ToResponseDto(),
+            Owner = pet.User.ToPublicResponseDto(),
             ImageUrls = imageUrls,
             Tags = tags,
         };

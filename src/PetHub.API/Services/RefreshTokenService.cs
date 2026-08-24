@@ -116,4 +116,27 @@ public class RefreshTokenService(AppDbContext dbContext, IOptions<RefreshTokenSe
         await _db.SaveChangesAsync();
         return true;
     }
+
+    public async Task RevokeAllForUserAsync(
+        Guid userId,
+        string reason,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var now = DateTime.UtcNow;
+        var activeTokens = await _db
+            .RefreshTokens.Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in activeTokens)
+        {
+            token.RevokedAt = now;
+            token.ReasonRevoked = reason;
+        }
+
+        if (activeTokens.Count > 0)
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+    }
 }

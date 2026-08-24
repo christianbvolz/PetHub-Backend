@@ -11,7 +11,10 @@ namespace PetHub.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController(IUserRepository userRepository) : ApiControllerBase
+public class UsersController(
+    IUserRepository userRepository,
+    IAuthLifecycleService authLifecycleService
+) : ApiControllerBase
 {
     /// <summary>
     /// Retrieves the authenticated user's profile
@@ -43,9 +46,32 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
     }
 
     /// <summary>
+    /// Retrieves a sanitized public profile for a person or shelter
+    /// </summary>
+    /// <param name="id">User ID</param>
+    /// <returns>Public profile data (name, photo, city/state, account type). Contact details are omitted.</returns>
+    /// <response code="200">Profile found successfully</response>
+    /// <response code="404">User not found</response>
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(ApiResponse<PublicUserResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<PublicUserResponseDto>>> GetUser(Guid id)
+    {
+        var user = await userRepository.GetByIdAsync(id);
+
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        return Success(user.ToPublicResponseDto());
+    }
+
+    /// <summary>
     /// Updates the authenticated user's profile (partial update)
     /// </summary>
-    /// <param name="dto">Data to be updated. Supports partial update of name, email, password, phone, address and profile picture</param>
+    /// <param name="dto">Data to be updated. Supports partial update of name, email, password, phone, address, account type, CNPJ and description</param>
     /// <returns>Indicates if the update was successful and if re-authentication is required</returns>
     /// <response code="200">Profile updated successfully</response>
     /// <response code="400">Invalid data (email already registered)</response>
@@ -67,7 +93,15 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
 
         var userId = userIdResult.Value; // Extracts Guid from successful result
 
-        // Check if email or password is being changed (requires re-authentication)
+        var currentUser = await userRepository.GetByIdAsync(userId);
+        if (currentUser == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        bool emailChanged =
+            dto.Email != null
+            && !string.Equals(dto.Email, currentUser.Email, StringComparison.Ordinal);
         bool requiresReauth =
             !string.IsNullOrEmpty(dto.Email) || !string.IsNullOrEmpty(dto.Password);
 
@@ -78,6 +112,15 @@ public class UsersController(IUserRepository userRepository) : ApiControllerBase
             if (!success)
             {
                 return NotFound("User not found.");
+            }
+
+            if (emailChanged)
+            {
+                var updatedUser = await userRepository.GetByIdAsync(userId);
+                if (updatedUser != null)
+                {
+                    await authLifecycleService.SendVerificationEmailAsync(updatedUser);
+                }
             }
 
             var message = requiresReauth

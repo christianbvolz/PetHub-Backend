@@ -15,6 +15,11 @@ public interface IAdoptionService
     Task<AdoptionRequest?> ApproveAdoptionRequestAsync(int requestId, Guid ownerId);
 
     /// <summary>
+    /// Cancel a pending adoption request. Only the adopter who created it can cancel.
+    /// </summary>
+    Task<AdoptionRequest?> CancelAdoptionRequestAsync(int requestId, Guid adopterId);
+
+    /// <summary>
     /// Mark pet as adopted directly (for adoptions outside platform) and reject all pending requests
     /// </summary>
     Task<bool> MarkPetAsAdoptedAsync(int petId, Guid ownerId);
