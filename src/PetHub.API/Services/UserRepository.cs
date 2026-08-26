@@ -111,6 +111,21 @@ public class UserRepository(AppDbContext context) : IUserRepository
         // Business logic: hash password when changing
         if (!string.IsNullOrEmpty(dto.Password))
         {
+            if (
+                string.IsNullOrEmpty(dto.CurrentPassword)
+                || !PasswordHelper.VerifyPassword(dto.CurrentPassword, user.PasswordHash)
+            )
+            {
+                throw new InvalidOperationException("Current password is incorrect.");
+            }
+
+            if (PasswordHelper.VerifyPassword(dto.Password, user.PasswordHash))
+            {
+                throw new InvalidOperationException(
+                    "New password must be different from the current password."
+                );
+            }
+
             user.PasswordHash = PasswordHelper.HashPassword(dto.Password);
         }
 

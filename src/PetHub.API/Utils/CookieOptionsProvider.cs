@@ -10,10 +10,12 @@ namespace PetHub.API.Utils;
 public class CookieOptionsProvider : ICookieOptionsProvider
 {
     private readonly RefreshTokenSettings _settings;
+    private readonly IHostEnvironment _environment;
 
-    public CookieOptionsProvider(IOptions<RefreshTokenSettings> options)
+    public CookieOptionsProvider(IOptions<RefreshTokenSettings> options, IHostEnvironment environment)
     {
         _settings = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
     public CookieOptions CreateRefreshCookieOptions()
@@ -22,7 +24,9 @@ public class CookieOptionsProvider : ICookieOptionsProvider
         {
             HttpOnly = true,
             Expires = DateTime.UtcNow.AddDays(_settings.ExpiresAtDays),
-            Secure = true,
+            // Browsers reject Secure cookies on http://. Local HTTP avoids the
+            // untrusted ASP.NET developer certificate (ERR_CERT_AUTHORITY_INVALID).
+            Secure = !_environment.IsDevelopment(),
             SameSite = SameSiteMode.Lax,
         };
     }
@@ -32,7 +36,7 @@ public class CookieOptionsProvider : ICookieOptionsProvider
         return new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            Secure = !_environment.IsDevelopment(),
             SameSite = SameSiteMode.Lax,
             Expires = DateTime.UtcNow.AddDays(-1),
         };

@@ -229,7 +229,7 @@ dotnet tool install --global dotnet-ef
 
 ### 4. Configurar o Banco de Dados
 
-Na subida da API, `DatabaseInitializer` aplica as migrations EF (`MigrateAsync`) e o catálogo (espécies, raças, tags). Dados de demonstração (usuários e pets) **só são inseridos em Development**, se o banco ainda não tiver users/pets.
+Em **Development**, `DatabaseInitializer` aplica as migrations EF na subida (`MigrateAsync`) e o catálogo (espécies, raças, tags). Em **Production/Docker** as migrations **não** rodam sozinhas — só se `APPLY_MIGRATIONS=true`. Dados de demonstração (usuários e pets) **só são inseridos em Development**, se o banco ainda não tiver users/pets.
 
 ```bash
 cd src/PetHub.API
@@ -268,12 +268,16 @@ Há um `Dockerfile` na raiz (contexto do build = repositório). A imagem escuta 
 
 ```bash
 docker build -t pethub-api .
-docker run --rm -p 8080:8080 \
-  -e JWT_SECRET="minha_chave_secreta_super_segura_pethub_2025" \
-  -e DB_CONNECTION_STRING="Server=...;Port=4000;Database=test;Uid=...;Pwd=...;SslMode=VerifyCA;" \
-  -e FRONTEND_URL="http://localhost:3000" \
-  pethub-api
+docker run --rm -p 8080:8080 --env-file .env pethub-api
 ```
+
+Depois de uma migration nova, aplique **uma vez**:
+
+```bash
+docker run --rm -p 8080:8080 --env-file .env -e APPLY_MIGRATIONS=true pethub-api
+```
+
+Ou, sem Docker: `dotnet ef database update` em `src/PetHub.API`.
 
 ## 📂 Estrutura do Projeto
 

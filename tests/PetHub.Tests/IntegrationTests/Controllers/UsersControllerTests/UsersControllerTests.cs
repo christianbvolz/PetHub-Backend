@@ -172,7 +172,8 @@ public class UsersIntegrationTests : IClassFixture<PetHubWebApplicationFactory>,
     {
         // Arrange
         var patchDto = TestConstants.DtoBuilders.CreatePatchUserDto(
-            password: TestConstants.Passwords.AnotherValidPassword
+            password: TestConstants.Passwords.AnotherValidPassword,
+            currentPassword: TestConstants.Passwords.ValidPassword
         );
 
         // Act

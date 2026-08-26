@@ -373,8 +373,10 @@ try
         app.UseSwagger();
         app.UseSwaggerUI();
     }
-
-    app.UseHttpsRedirection();
+    else
+    {
+        app.UseHttpsRedirection();
+    }
 
     // --- GLOBAL EXCEPTION HANDLER ---
     // This middleware catches any error from the code below it
@@ -404,6 +406,12 @@ try
     app.MapHealthChecks("/health").AllowAnonymous().DisableRateLimiting();
 
     await DatabaseInitializer.InitializeAsync(app);
+
+    if (DatabaseInitializer.IsEnabled("MIGRATE_THEN_EXIT"))
+    {
+        Log.Information("Database reset/migrate finished; exiting because MIGRATE_THEN_EXIT=true");
+        return;
+    }
 
     // Start Application
     app.Run(); // Required for WebApplicationFactory in integration tests

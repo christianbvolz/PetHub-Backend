@@ -138,4 +138,84 @@ public class UserRepositoryTests : IDisposable
         stored.EmailVerified.Should().BeFalse();
         stored.EmailVerifiedAt.Should().BeNull();
     }
+
+    [Fact]
+    public async Task UpdateAsync_PasswordWithoutCurrentPassword_Throws()
+    {
+        var user = await _repository.CreateAsync(TestConstants.DtoBuilders.CreateValidUserDto());
+
+        var act = async () =>
+            await _repository.UpdateAsync(
+                user.Id,
+                new PatchUserDto { Password = TestConstants.Passwords.AnotherValidPassword }
+            );
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("Current password is incorrect.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PasswordWithWrongCurrentPassword_Throws()
+    {
+        var user = await _repository.CreateAsync(TestConstants.DtoBuilders.CreateValidUserDto());
+
+        var act = async () =>
+            await _repository.UpdateAsync(
+                user.Id,
+                new PatchUserDto
+                {
+                    Password = TestConstants.Passwords.AnotherValidPassword,
+                    CurrentPassword = "WrongPass1",
+                }
+            );
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("Current password is incorrect.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PasswordSameAsCurrent_Throws()
+    {
+        var user = await _repository.CreateAsync(TestConstants.DtoBuilders.CreateValidUserDto());
+
+        var act = async () =>
+            await _repository.UpdateAsync(
+                user.Id,
+                new PatchUserDto
+                {
+                    Password = TestConstants.Passwords.ValidPassword,
+                    CurrentPassword = TestConstants.Passwords.ValidPassword,
+                }
+            );
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("New password must be different from the current password.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PasswordWithCurrentPassword_Succeeds()
+    {
+        var user = await _repository.CreateAsync(TestConstants.DtoBuilders.CreateValidUserDto());
+
+        var updated = await _repository.UpdateAsync(
+            user.Id,
+            new PatchUserDto
+            {
+                Password = TestConstants.Passwords.AnotherValidPassword,
+                CurrentPassword = TestConstants.Passwords.ValidPassword,
+            }
+        );
+
+        updated.Should().BeTrue();
+        var stored = await _repository.GetByIdAsync(user.Id);
+        PetHub.API.Utils.PasswordHelper.VerifyPassword(
+                TestConstants.Passwords.AnotherValidPassword,
+                stored!.PasswordHash
+            )
+            .Should()
+            .BeTrue();
+    }
 }
